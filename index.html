@@ -6,7 +6,7 @@
     <title>Igni Terra — Manuel Technique</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #07101E; }
+        body { background: #07101E; overflow: hidden; }
 
         #loading {
             position: fixed;
@@ -18,18 +18,27 @@
             justify-content: center;
             gap: 20px;
             z-index: 100;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.5s ease;
         }
         #loading.hidden { opacity: 0; pointer-events: none; }
 
         .load-title { font-size: 11px; letter-spacing: 6px; text-transform: uppercase; color: #38C4C4; font-family: monospace; }
         .load-sub   { font-size: 9px; letter-spacing: 3px; color: #365470; font-family: monospace; }
+        .load-ref   { font-size: 8px; letter-spacing: 2px; color: #1C7070; font-family: monospace; }
 
-        .load-bar-wrap { width: 200px; height: 2px; background: #152640; overflow: hidden; }
-        .load-bar { height: 100%; background: #38C4C4; transform: translateX(-100%); animation: progress 3s ease-in-out forwards; }
-        @keyframes progress { 0% { transform: translateX(-100%); } 70% { transform: translateX(-15%); } 100% { transform: translateX(0); } }
+        .load-bar-wrap { width: 200px; height: 1px; background: #152640; overflow: hidden; }
+        .load-bar {
+            height: 100%;
+            background: #38C4C4;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
 
-        canvas { display: block; width: 100vw !important; height: 100vh !important; }
+        canvas {
+            display: block;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
     </style>
 </head>
 <body>
@@ -37,37 +46,62 @@
 <div id="loading">
     <div class="load-title">Igni Terra</div>
     <div class="load-sub" id="load-status">Initialisation du système...</div>
-    <div class="load-bar-wrap"><div class="load-bar"></div></div>
-    <div class="load-sub">ATE / DAE · DOC-IT-0042</div>
+    <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+    <div class="load-ref">ATE / DAE · DOC-IT-0042</div>
 </div>
 
 <canvas id="ComposeTarget"></canvas>
 
-<!-- Entry point wasmJs — chargé en tant que module ES -->
 <script type="module" src="IgniTerra-composeApp-wasm-js.mjs"></script>
 
 <script>
     const statuses = [
+        "Initialisation du système...",
         "Calibration de l'arc électrique...",
         "Vérification du cristal de foudre...",
-        "Initialisation du système de tir...",
         "Chargement des protocoles ATE...",
+        "Initialisation du module Magitek...",
     ];
-    let i = 0;
+    let si = 0;
+    let progress = 0;
     const statusEl = document.getElementById("load-status");
-    const interval = setInterval(() => { statusEl.textContent = statuses[i++ % statuses.length]; }, 700);
+    const barEl    = document.getElementById("load-bar");
 
-    const canvas = document.getElementById("ComposeTarget");
-    const observer = new MutationObserver(() => {
+    // Avance la barre progressivement
+    const progressInterval = setInterval(() => {
+        progress = Math.min(progress + Math.random() * 8, 90);
+        barEl.style.width = progress + "%";
+        statusEl.textContent = statuses[si++ % statuses.length];
+    }, 700);
+
+    // Polling — vérifie toutes les 200ms si le canvas a une taille réelle
+    // (Compose le redimensionne dès qu'il commence à rendre)
+    const pollInterval = setInterval(() => {
+        const canvas = document.getElementById("ComposeTarget");
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+            clearInterval(pollInterval);
+            clearInterval(progressInterval);
+            barEl.style.width = "100%";
+            setTimeout(() => {
+                const loading = document.getElementById("loading");
+                if (loading) {
+                    loading.classList.add("hidden");
+                    setTimeout(() => loading.remove(), 600);
+                }
+            }, 300);
+        }
+    }, 200);
+
+    // Sécurité — force la disparition après 30s si Compose ne répond toujours pas
+    setTimeout(() => {
+        clearInterval(pollInterval);
+        clearInterval(progressInterval);
         const loading = document.getElementById("loading");
         if (loading) {
-            clearInterval(interval);
             loading.classList.add("hidden");
-            setTimeout(() => loading.remove(), 500);
+            setTimeout(() => loading.remove(), 600);
         }
-        observer.disconnect();
-    });
-    observer.observe(canvas, { attributes: true, attributeFilter: ["width"] });
+    }, 30000);
 </script>
 
 </body>
