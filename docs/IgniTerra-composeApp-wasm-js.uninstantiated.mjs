@@ -4515,7 +4515,7 @@ export async function instantiate(imports={}, runInitializer=true) {
             } catch(e) {}
         },
         'igniterra.windowInnerWidth' : () => window.innerWidth,
-        'igniterra.windowInnerHeight' : () => window.innerHeight
+        'igniterra.devicePixelRatio' : () => window.devicePixelRatio
     }
     
     // Placed here to give access to it from externals (js_code)
