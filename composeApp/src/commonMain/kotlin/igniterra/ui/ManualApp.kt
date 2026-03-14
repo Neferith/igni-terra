@@ -445,9 +445,7 @@ private fun MixRow(label: String, ratio: Float, color: Color, effect: String) {
 @Composable
 private fun ComponentsSection() {
     SectionHead(AppStrings.S03.num, AppStrings.S03.title)
-    Box(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr).padding(16.dp)) {
-        Text(AppStrings.S03.diagram, fontSize = 10.sp, fontFamily = Mono, color = TealDk, lineHeight = 17.sp)
-    }
+    ComponentDiagram()
     Spacer(Modifier.height(14.dp))
     SubHead(AppStrings.S03.Sub1.num, AppStrings.S03.Sub1.title)
     Prose(AppStrings.S03.Sub1.body)
@@ -663,6 +661,109 @@ fun GlitchOverlay(engine: GlitchEngine, modifier: Modifier = Modifier) {
         // Flash de surface
         if (engine.flashIntensity > 0f) {
             drawRect(color = T1.copy(alpha = engine.flashIntensity))
+        }
+    }
+}
+
+// ── Diagramme composants — rendu Compose natif (pas d'ASCII) ─────────────────
+@Composable
+private fun ComponentDiagram() {
+    Column(
+        Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            "IGNI TERRA — SCHÉMA FONCTIONNEL",
+            fontSize = 9.sp, fontFamily = Mono, color = Teal,
+            letterSpacing = 2.sp, modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        DiagramBlock(
+            title    = "BUSE DE SORTIE",
+            color    = Teal,
+            entries  = listOf(
+                "Électrodes" to "Angle de convergence calibré",
+                "Arc"        to "Arc électrique permanent (gâchette enfoncée)"
+            )
+        )
+
+        DiagramConnector()
+
+        DiagramBlock(
+            title    = "MODULE PROPULSION",
+            color    = Gold,
+            entries  = listOf(
+                "Résistance variable" to "Mécanique, pilotée par la gâchette",
+                "Débit"              to "Pression légère → α  |  Pression forte → γ"
+            )
+        )
+
+        DiagramConnector()
+
+        DiagramBlock(
+            title    = "MODULE ÉNERGIE",
+            color    = TealDk,
+            entries  = listOf(
+                "Bobine Magitek"    to "Génère l'arc électrique",
+                "Cristal de Foudre" to "Logement caoutchouc anti-vibrations",
+                "Réinjection EM"    to "Boucle fermée — réduit la consommation du cristal"
+            )
+        )
+    }
+}
+
+@Composable
+private fun DiagramBlock(
+    title   : String,
+    color   : Color,
+    entries : List<Pair<String, String>>
+) {
+    Column(
+        Modifier.fillMaxWidth()
+            .border(1.dp, color.copy(alpha = 0.4f))
+    ) {
+        // Header du bloc
+        Box(
+            Modifier.fillMaxWidth()
+                .background(color.copy(alpha = 0.08f))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Text(title, fontSize = 8.sp, fontFamily = Mono, color = color, letterSpacing = 2.sp)
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(color.copy(alpha = 0.25f)))
+        // Lignes de données
+        entries.forEachIndexed { i, (key, value) ->
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    key,
+                    fontSize = 9.sp, fontFamily = Mono, color = color.copy(alpha = 0.7f),
+                    modifier = Modifier.width(130.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    value,
+                    fontSize = 10.sp, color = T2, lineHeight = 15.sp,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            if (i < entries.lastIndex)
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+        }
+    }
+}
+
+@Composable
+private fun DiagramConnector() {
+    Column(
+        Modifier.padding(start = 20.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        repeat(3) {
+            Box(Modifier.width(1.dp).height(5.dp).background(TealDk.copy(alpha = 0.5f)))
+            Spacer(Modifier.height(2.dp))
         }
     }
 }
