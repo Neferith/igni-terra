@@ -4513,7 +4513,9 @@ export async function instantiate(imports={}, runInitializer=true) {
                 src.connect(ctx.destination);
                 src.start();
             } catch(e) {}
-        }
+        },
+        'igniterra.windowInnerWidth' : () => window.innerWidth,
+        'igniterra.windowInnerHeight' : () => window.innerHeight
     }
     
     // Placed here to give access to it from externals (js_code)
