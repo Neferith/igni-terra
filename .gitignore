@@ -1,0 +1,41 @@
+# ── Gradle ────────────────────────────────────────────────────────────────────
+.gradle/
+build/
+**/build/
+!src/**/build/
+
+# Wrapper jar (properties conservé, jar ignoré)
+gradle/wrapper/gradle-wrapper.jar
+
+# ── IntelliJ IDEA / Android Studio ───────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ── Android ───────────────────────────────────────────────────────────────────
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# ── Kotlin / JVM ──────────────────────────────────────────────────────────────
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# ── wasmJs / Web ──────────────────────────────────────────────────────────────
+**/dist/
+**/node_modules/
+**/.kotlin/
+kotlin-js-store/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+deploy.ps1
+deploy.sh

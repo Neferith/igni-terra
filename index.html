@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Igni Terra — Manuel Technique</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #07101E; }
+
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: #07101E;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 100;
+            transition: opacity 0.4s ease;
+        }
+        #loading.hidden { opacity: 0; pointer-events: none; }
+
+        .load-title { font-size: 11px; letter-spacing: 6px; text-transform: uppercase; color: #38C4C4; font-family: monospace; }
+        .load-sub   { font-size: 9px; letter-spacing: 3px; color: #365470; font-family: monospace; }
+
+        .load-bar-wrap { width: 200px; height: 2px; background: #152640; overflow: hidden; }
+        .load-bar { height: 100%; background: #38C4C4; transform: translateX(-100%); animation: progress 3s ease-in-out forwards; }
+        @keyframes progress { 0% { transform: translateX(-100%); } 70% { transform: translateX(-15%); } 100% { transform: translateX(0); } }
+
+        canvas { display: block; width: 100vw !important; height: 100vh !important; }
+    </style>
+</head>
+<body>
+
+<div id="loading">
+    <div class="load-title">Igni Terra</div>
+    <div class="load-sub" id="load-status">Initialisation du système...</div>
+    <div class="load-bar-wrap"><div class="load-bar"></div></div>
+    <div class="load-sub">ATE / DAE · DOC-IT-0042</div>
+</div>
+
+<canvas id="ComposeTarget"></canvas>
+
+<!-- Entry point wasmJs — chargé en tant que module ES -->
+<script type="module" src="IgniTerra-composeApp-wasm-js.mjs"></script>
+
+<script>
+    const statuses = [
+        "Calibration de l'arc électrique...",
+        "Vérification du cristal de foudre...",
+        "Initialisation du système de tir...",
+        "Chargement des protocoles ATE...",
+    ];
+    let i = 0;
+    const statusEl = document.getElementById("load-status");
+    const interval = setInterval(() => { statusEl.textContent = statuses[i++ % statuses.length]; }, 700);
+
+    const canvas = document.getElementById("ComposeTarget");
+    const observer = new MutationObserver(() => {
+        const loading = document.getElementById("loading");
+        if (loading) {
+            clearInterval(interval);
+            loading.classList.add("hidden");
+            setTimeout(() => loading.remove(), 500);
+        }
+        observer.disconnect();
+    });
+    observer.observe(canvas, { attributes: true, attributeFilter: ["width"] });
+</script>
+
+</body>
+</html>
