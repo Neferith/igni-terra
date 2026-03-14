@@ -1,0 +1,668 @@
+package igniterra.ui
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import igniterra.CrackleSound
+import igniterra.strings.AppStrings
+import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+private val Bg      = Color(0xFF07101E)
+private val Panel   = Color(0xFF0C1B30)
+private val Card    = Color(0xFF0E2040)
+private val Teal    = Color(0xFF38C4C4)
+private val TealDk  = Color(0xFF1C7070)
+private val Gold    = Color(0xFFC8A44A)
+private val GoldDk  = Color(0xFF7A6028)
+private val T1      = Color(0xFFD6EDF6)
+private val T2      = Color(0xFF6EA8C0)
+private val T3      = Color(0xFF365470)
+private val Bdr     = Color(0xFF152640)
+private val Red     = Color(0xFFC84040)
+private val RedBg   = Color(0x14C84040)
+private val RedBdr  = Color(0x40C84040)
+private val GoldBg  = Color(0x12C8A44A)
+private val GoldBdr = Color(0x40C8A44A)
+private val CFeu    = Color(0xFFC84040)
+private val CTerre  = Color(0xFF8A6030)
+private val CVent   = Color(0xFF38C4C4)
+private val Mono    = FontFamily.Monospace
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+enum class ManualSection(val num: String, val label: String) {
+    COVER("00", "Couverture"),
+    OVERVIEW("01", "Vue d'ensemble"),
+    SPECS("02", "Spécifications"),
+    COMPONENTS("03", "Composants"),
+    FIRE_MODES("04", "Modes de tir"),
+    SAFETY("05", "Sécurité"),
+    LEGAL("06", "Dispositions légales")
+}
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+// Seuil en dp en dessous duquel on bascule en mode portrait (drawer)
+private const val PORTRAIT_THRESHOLD_DP = 600
+
+@Composable
+fun ManualApp() {
+    val glitch = remember { GlitchEngine() }
+    val scope  = rememberCoroutineScope()
+    LaunchedEffect(Unit) { glitch.startLoop(scope) }
+
+    var selected    by remember { mutableStateOf(ManualSection.COVER) }
+    var drawerOpen  by remember { mutableStateOf(false) }
+    val (shakeX, shakeY) = glitch.contentShake
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val isPortrait = maxWidth < PORTRAIT_THRESHOLD_DP.dp
+
+        Box(Modifier.fillMaxSize()) {
+            if (isPortrait) {
+                // ── Mode portrait : contenu plein écran + drawer overlay ──────
+                PortraitLayout(
+                    glitch      = glitch,
+                    selected    = selected,
+                    drawerOpen  = drawerOpen,
+                    shakeX      = shakeX,
+                    shakeY      = shakeY,
+                    onSelect    = { selected = it; drawerOpen = false },
+                    onToggle    = { drawerOpen = !drawerOpen },
+                    onDismiss   = { drawerOpen = false },
+                )
+            } else {
+                // ── Mode paysage / desktop : sidebar fixe ────────────────────
+                Row(
+                    Modifier.fillMaxSize().background(Bg)
+                        .offset(shakeX.dp, shakeY.dp)
+                ) {
+                    ManualSidebar(selected) { selected = it }
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
+                    ManualContent(selected, Modifier.weight(1f).fillMaxHeight())
+                }
+            }
+            GlitchOverlay(glitch)
+        }
+    }
+}
+
+@Composable
+private fun PortraitLayout(
+    glitch     : GlitchEngine,
+    selected   : ManualSection,
+    drawerOpen : Boolean,
+    shakeX     : Float,
+    shakeY     : Float,
+    onSelect   : (ManualSection) -> Unit,
+    onToggle   : () -> Unit,
+    onDismiss  : () -> Unit,
+) {
+    val drawerWidth = 220.dp
+    val offsetX by animateDpAsState(
+        targetValue = if (drawerOpen) 0.dp else -drawerWidth,
+        animationSpec = tween(durationMillis = 220),
+        label = "drawerOffset"
+    )
+
+    Box(Modifier.fillMaxSize().background(Bg)) {
+        // Contenu principal avec offset shake
+        Box(Modifier.fillMaxSize().offset(shakeX.dp, shakeY.dp)) {
+            Column(Modifier.fillMaxSize()) {
+                // Header mobile avec bouton menu
+                PortraitHeader(selected, onToggle)
+                Box(Modifier.weight(1f)) {
+                    ManualContent(selected, Modifier.fillMaxSize())
+                }
+            }
+        }
+
+        // Scrim sombre quand le drawer est ouvert
+        if (drawerOpen) {
+            Box(
+                Modifier.fillMaxSize()
+                    .background(Color(0x99000000))
+                    .pointerInput(Unit) { detectTapGestures { onDismiss() } }
+            )
+        }
+
+        // Drawer qui slide depuis la gauche
+        Box(Modifier.offset(x = offsetX).width(drawerWidth).fillMaxHeight()) {
+            ManualSidebar(selected, onSelect)
+        }
+    }
+}
+
+@Composable
+private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().background(Panel)
+            .border(BorderStroke(1.dp, Bdr))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Bouton hamburger ☰
+        Box(
+            Modifier.size(32.dp)
+                .clickable(onClick = { onMenuClick(); CrackleSound.click() }),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(3) {
+                    Box(Modifier.width(18.dp).height(1.5f.dp).background(Teal))
+                }
+            }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(
+                AppStrings.Header.weaponName.uppercase(),
+                fontSize = 13.sp, fontWeight = FontWeight.W300,
+                letterSpacing = 4.sp, color = Teal
+            )
+            Text(
+                "${selected.num} — ${selected.label}",
+                fontSize = 9.sp, fontFamily = Mono, color = T3, letterSpacing = 1.sp
+            )
+        }
+        Spacer(Modifier.weight(1f))
+        Box(
+            Modifier.border(1.dp, GoldDk, RoundedCornerShape(2.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(AppStrings.Header.badge.uppercase(), fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = Gold)
+        }
+    }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+@Composable
+private fun ManualSidebar(selected: ManualSection, onSelect: (ManualSection) -> Unit) {
+    Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
+        Column(Modifier.padding(18.dp)) {
+            Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                AppStrings.Header.weaponName.uppercase(),
+                fontSize = 15.sp, fontWeight = FontWeight.W300, letterSpacing = 4.sp, color = Teal
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(AppStrings.Header.docRef, fontSize = 8.sp, fontFamily = Mono, color = T3)
+        }
+        HRule()
+        ManualSection.entries.forEach { s ->
+            SideNavItem(s, s == selected) { onSelect(s) }
+        }
+        Spacer(Modifier.weight(1f))
+        HRule()
+        Row(Modifier.padding(14.dp)) {
+            Box(
+                Modifier
+                    .border(1.dp, GoldDk, RoundedCornerShape(2.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    AppStrings.Header.badge.uppercase(),
+                    fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = Gold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SideNavItem(section: ManualSection, active: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .clickable(onClick = { onClick(); CrackleSound.click() })
+            .background(if (active) Color(0x1538C4C4) else Color.Transparent)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.width(3.dp).height(16.dp).background(if (active) Teal else Color.Transparent))
+        Spacer(Modifier.width(12.dp))
+        Text(
+            section.num, fontSize = 9.sp, fontFamily = Mono,
+            color = if (active) Teal else T3, modifier = Modifier.width(22.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            section.label, fontSize = 11.sp, letterSpacing = 1.sp,
+            color = if (active) Teal else T2,
+            fontWeight = if (active) FontWeight.W500 else FontWeight.Normal
+        )
+    }
+}
+
+// ── Content ───────────────────────────────────────────────────────────────────
+@Composable
+private fun ManualContent(section: ManualSection, modifier: Modifier) {
+    val scroll = rememberScrollState()
+    Box(modifier) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
+            when (section) {
+                ManualSection.COVER      -> CoverSection()
+                ManualSection.OVERVIEW   -> OverviewSection()
+                ManualSection.SPECS      -> SpecsSection()
+                ManualSection.COMPONENTS -> ComponentsSection()
+                ManualSection.FIRE_MODES -> FireModesSection()
+                ManualSection.SAFETY     -> SafetySection()
+                ManualSection.LEGAL      -> LegalSection()
+            }
+            Spacer(Modifier.height(28.dp))
+            HRule()
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(AppStrings.Footer.docRef, fontSize = 9.sp, fontFamily = Mono, color = T3)
+                Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
+                Text(AppStrings.Footer.classification, fontSize = 9.sp, fontFamily = Mono, color = T3)
+            }
+        }
+    }
+}
+
+// ── 00 Cover ──────────────────────────────────────────────────────────────────
+@Composable
+private fun CoverSection() {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(20.dp))
+        HexEmblem(Modifier.size(80.dp))
+        Spacer(Modifier.height(22.dp))
+        Text(AppStrings.Header.organization, fontSize = 9.sp, letterSpacing = 3.sp, color = T3)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            AppStrings.Header.weaponName.uppercase(),
+            fontSize = 44.sp, fontWeight = FontWeight.W100, letterSpacing = 14.sp, color = Teal
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(AppStrings.Cover.subtitle, fontSize = 10.sp, letterSpacing = 5.sp, color = Gold)
+        Spacer(Modifier.height(36.dp))
+        Column(Modifier.widthIn(max = 440.dp).border(1.dp, Bdr)) {
+            Row(Modifier.fillMaxWidth()) {
+                CoverMetaCell(AppStrings.Cover.Meta.refLabel, AppStrings.Cover.Meta.refValue, Modifier.weight(1f))
+                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                CoverMetaCell(AppStrings.Cover.Meta.revLabel, AppStrings.Cover.Meta.revValue, Modifier.weight(1f))
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+            Row(Modifier.fillMaxWidth()) {
+                CoverMetaCell(AppStrings.Cover.Meta.classLabel, AppStrings.Cover.Meta.classValue, Modifier.weight(1f))
+                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                CoverMetaCell(AppStrings.Cover.Meta.rangeLabel, AppStrings.Cover.Meta.rangeValue, Modifier.weight(1f))
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun HexEmblem(modifier: Modifier) {
+    Canvas(modifier) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        fun hex(r: Float, col: Color, sw: Float) {
+            val path = Path()
+            for (i in 0..5) {
+                val a = (PI / 180.0 * (60.0 * i - 30.0)).toFloat()
+                val x = cx + r * cos(a)
+                val y = cy + r * sin(a)
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            path.close()
+            drawPath(path, col, style = Stroke(sw))
+        }
+        val r1 = size.minDimension / 2f - 2f
+        hex(r1, Teal, 1.5f)
+        hex(r1 * 0.72f, TealDk, 0.8f)
+        hex(r1 * 0.46f, GoldDk, 0.8f)
+        for (i in 0..2) {
+            val a = (PI / 180.0 * (60.0 * i)).toFloat()
+            drawLine(
+                Teal.copy(alpha = 0.12f),
+                start = Offset(cx - r1 * cos(a), cy - r1 * sin(a)),
+                end   = Offset(cx + r1 * cos(a), cy + r1 * sin(a)),
+                strokeWidth = 0.5f
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoverMetaCell(label: String, value: String, modifier: Modifier) {
+    Column(modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Text(label, fontSize = 8.sp, letterSpacing = 2.sp, color = T3)
+        Spacer(Modifier.height(3.dp))
+        Text(value, fontSize = 11.sp, fontFamily = Mono, color = T1)
+    }
+}
+
+// ── 01 Vue d'ensemble ─────────────────────────────────────────────────────────
+@Composable
+private fun OverviewSection() {
+    SectionHead(AppStrings.S01.num, AppStrings.S01.title)
+    Prose(AppStrings.S01.body1)
+    Prose(AppStrings.S01.body2)
+    NoteBox(AppStrings.S01.Note.title) {
+        Prose(AppStrings.S01.Note.body)
+    }
+}
+
+// ── 02 Spécifications ─────────────────────────────────────────────────────────
+@Composable
+private fun SpecsSection() {
+    SectionHead(AppStrings.S02.num, AppStrings.S02.title)
+    val specs = listOf(
+        AppStrings.S02.Spec.nameLabel       to AppStrings.S02.Spec.nameValue,
+        AppStrings.S02.Spec.energyLabel     to AppStrings.S02.Spec.energyValue,
+        AppStrings.S02.Spec.fuelLabel       to AppStrings.S02.Spec.fuelValue,
+        AppStrings.S02.Spec.rangeLabel      to AppStrings.S02.Spec.rangeValue,
+        AppStrings.S02.Spec.controlLabel    to AppStrings.S02.Spec.controlValue,
+        AppStrings.S02.Spec.ignitionLabel   to AppStrings.S02.Spec.ignitionValue,
+        AppStrings.S02.Spec.archLabel       to AppStrings.S02.Spec.archValue,
+        AppStrings.S02.Spec.combustionLabel to AppStrings.S02.Spec.combustionValue,
+    )
+    val rows = specs.chunked(2)
+    Column(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr)) {
+        rows.forEachIndexed { ri, row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEachIndexed { ci, (lbl, v) ->
+                    DataCell(lbl, v, Modifier.weight(1f))
+                    if (ci == 0) Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+            if (ri < rows.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+        }
+    }
+    SubHead(AppStrings.S02.Sub1.num, AppStrings.S02.Sub1.title)
+    Column(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr).padding(14.dp)) {
+        Text(
+            AppStrings.S02.Sub1.tableTitle,
+            fontSize = 8.sp, letterSpacing = 3.sp, color = T3,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        MixRow(AppStrings.S02.Sub1.comp1Label, AppStrings.S02.Sub1.comp1Ratio, CFeu,   AppStrings.S02.Sub1.comp1Effect)
+        Spacer(Modifier.height(10.dp))
+        MixRow(AppStrings.S02.Sub1.comp2Label, AppStrings.S02.Sub1.comp2Ratio, CTerre, AppStrings.S02.Sub1.comp2Effect)
+        Spacer(Modifier.height(10.dp))
+        MixRow(AppStrings.S02.Sub1.comp3Label, AppStrings.S02.Sub1.comp3Ratio, CVent,  AppStrings.S02.Sub1.comp3Effect)
+    }
+    Spacer(Modifier.height(14.dp))
+    Prose(AppStrings.S02.Sub1.body)
+}
+
+@Composable
+private fun DataCell(label: String, value: String, modifier: Modifier) {
+    Column(modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
+        Text(label, fontSize = 8.sp, letterSpacing = 2.sp, color = T3)
+        Spacer(Modifier.height(3.dp))
+        Text(value, fontSize = 11.sp, fontFamily = Mono, color = T1)
+    }
+}
+
+@Composable
+private fun MixRow(label: String, ratio: Float, color: Color, effect: String) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, fontSize = 10.sp, fontFamily = Mono, color = T2, modifier = Modifier.width(180.dp))
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.weight(1f).height(5.dp).background(Bdr)) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(ratio).background(color))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(effect, fontSize = 9.sp, color = T3, modifier = Modifier.width(140.dp))
+    }
+}
+
+// ── 03 Composants ─────────────────────────────────────────────────────────────
+@Composable
+private fun ComponentsSection() {
+    SectionHead(AppStrings.S03.num, AppStrings.S03.title)
+    Box(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr).padding(16.dp)) {
+        Text(AppStrings.S03.diagram, fontSize = 10.sp, fontFamily = Mono, color = TealDk, lineHeight = 17.sp)
+    }
+    Spacer(Modifier.height(14.dp))
+    SubHead(AppStrings.S03.Sub1.num, AppStrings.S03.Sub1.title)
+    Prose(AppStrings.S03.Sub1.body)
+    WarningBox(AppStrings.S03.Warning.title) {
+        Text(
+            buildAnnotatedString {
+                pushStyle(SpanStyle(color = Color(0xFFE06060), fontWeight = FontWeight.W500))
+                append(AppStrings.S03.Warning.arcUnstable); pop()
+                append(" — ${AppStrings.S03.Warning.arcUnstableDesc}\n")
+                pushStyle(SpanStyle(color = Color(0xFFE06060), fontWeight = FontWeight.W500))
+                append(AppStrings.S03.Warning.arcStrong); pop()
+                append(" — ${AppStrings.S03.Warning.arcStrongDesc}\n")
+                pushStyle(SpanStyle(color = Color(0xFFE06060), fontWeight = FontWeight.W500))
+                append(AppStrings.S03.Warning.arcWeak); pop()
+                append(" — ${AppStrings.S03.Warning.arcWeakDesc}")
+            },
+            fontSize = 12.sp, lineHeight = 20.sp, color = T2
+        )
+    }
+}
+
+// ── 04 Modes de tir ───────────────────────────────────────────────────────────
+@Composable
+private fun FireModesSection() {
+    SectionHead(AppStrings.S04.num, AppStrings.S04.title)
+    Prose(AppStrings.S04.intro)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        ModeCard(
+            code = AppStrings.S04.Alpha.code, name = AppStrings.S04.Alpha.name,
+            range = AppStrings.S04.Alpha.range, unit = AppStrings.S04.Alpha.unit,
+            desc = AppStrings.S04.Alpha.desc, barRatio = AppStrings.S04.Alpha.barRatio,
+            accent = Teal, modifier = Modifier.weight(1f)
+        )
+        ModeCard(
+            code = AppStrings.S04.Beta.code, name = AppStrings.S04.Beta.name,
+            range = AppStrings.S04.Beta.range, unit = AppStrings.S04.Beta.unit,
+            desc = AppStrings.S04.Beta.desc, barRatio = AppStrings.S04.Beta.barRatio,
+            accent = Gold, modifier = Modifier.weight(1f)
+        )
+        ModeCard(
+            code = AppStrings.S04.Gamma.code, name = AppStrings.S04.Gamma.name,
+            range = AppStrings.S04.Gamma.range, unit = AppStrings.S04.Gamma.unit,
+            desc = AppStrings.S04.Gamma.desc, barRatio = AppStrings.S04.Gamma.barRatio,
+            accent = Red, modifier = Modifier.weight(1f)
+        )
+    }
+    Spacer(Modifier.height(14.dp))
+    NoteBox(AppStrings.S04.Note.title) {
+        Prose(AppStrings.S04.Note.body)
+    }
+}
+
+@Composable
+private fun ModeCard(
+    code: String, name: String, range: String, unit: String,
+    desc: String, barRatio: Float, accent: Color, modifier: Modifier
+) {
+    Column(modifier.background(Card).border(1.dp, Bdr)) {
+        Box(Modifier.fillMaxWidth().height(2.dp).background(accent))
+        Column(Modifier.padding(14.dp)) {
+            Text(code, fontSize = 9.sp, letterSpacing = 3.sp, fontFamily = Mono, color = accent)
+            Spacer(Modifier.height(4.dp))
+            Text(name.uppercase(), fontSize = 11.sp, letterSpacing = 3.sp, fontWeight = FontWeight.W500, color = accent)
+            Spacer(Modifier.height(12.dp))
+            Text(range, fontSize = 30.sp, fontWeight = FontWeight.W100, color = T1, lineHeight = 32.sp)
+            Text(unit.uppercase(), fontSize = 9.sp, letterSpacing = 2.sp, color = T3)
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().height(3.dp).background(Bdr)) {
+                Box(Modifier.fillMaxHeight().fillMaxWidth(barRatio).background(accent))
+            }
+            Spacer(Modifier.height(10.dp))
+            Prose(desc)
+        }
+    }
+}
+
+// ── 05 Sécurité ───────────────────────────────────────────────────────────────
+@Composable
+private fun SafetySection() {
+    SectionHead(AppStrings.S05.num, AppStrings.S05.title)
+    WarningBox(AppStrings.S05.MainWarning.title) {
+        Prose(AppStrings.S05.MainWarning.body)
+    }
+    Prose(AppStrings.S05.intro)
+    Column(
+        Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        AppStrings.S05.checklist.forEachIndexed { i, item ->
+            CheckItem(item)
+            if (i < AppStrings.S05.checklist.lastIndex)
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr.copy(alpha = 0.7f)))
+        }
+    }
+    SubHead(AppStrings.S05.Activation.num, AppStrings.S05.Activation.title)
+    Prose(AppStrings.S05.Activation.steps)
+    WarningBox(AppStrings.S05.ArcWarning.title) {
+        Prose(AppStrings.S05.ArcWarning.body)
+    }
+}
+
+@Composable
+private fun CheckItem(text: String) {
+    Row(Modifier.padding(vertical = 7.dp), verticalAlignment = Alignment.Top) {
+        Text("◆", fontSize = 8.sp, color = TealDk, modifier = Modifier.padding(top = 4.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, fontSize = 12.sp, lineHeight = 19.sp, color = T2)
+    }
+}
+
+// ── 06 Dispositions légales ───────────────────────────────────────────────────
+@Composable
+private fun LegalSection() {
+    SectionHead(AppStrings.S06.num, AppStrings.S06.title)
+    Prose(AppStrings.S06.p1)
+    Prose(AppStrings.S06.p2)
+    Prose(AppStrings.S06.p3)
+    Prose(AppStrings.S06.p4)
+    Spacer(Modifier.height(20.dp))
+    Box(Modifier.border(1.dp, GoldDk).padding(horizontal = 18.dp, vertical = 7.dp)) {
+        Text(AppStrings.S06.stamp, fontSize = 9.sp, letterSpacing = 4.sp, fontFamily = Mono, color = GoldDk)
+    }
+}
+
+// ── Composants réutilisables ──────────────────────────────────────────────────
+@Composable
+private fun SectionHead(num: String, title: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(num, fontSize = 10.sp, letterSpacing = 2.sp, fontFamily = Mono, color = TealDk)
+        Spacer(Modifier.width(12.dp))
+        Text(title.uppercase(), fontSize = 11.sp, letterSpacing = 4.sp, fontWeight = FontWeight.W500, color = T1)
+        Spacer(Modifier.width(12.dp))
+        Box(Modifier.weight(1f).height(1.dp).background(Bdr))
+    }
+}
+
+@Composable
+private fun SubHead(num: String, title: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(num, fontSize = 9.sp, letterSpacing = 1.sp, fontFamily = Mono, color = TealDk)
+        Spacer(Modifier.width(10.dp))
+        Text(title.uppercase(), fontSize = 10.sp, letterSpacing = 3.sp, fontWeight = FontWeight.W500, color = T2)
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.weight(1f).height(1.dp).background(Bdr))
+    }
+}
+
+/**
+ * Texte de corps. Les placeholders "[À compléter]" s'affichent en italique/dim.
+ */
+@Composable
+private fun Prose(text: String) {
+    val isPlaceholder = text.trim().startsWith("[")
+    Text(
+        text = text,
+        fontSize = 12.sp,
+        lineHeight = 20.sp,
+        color = if (isPlaceholder) T3 else T2,
+        fontStyle = if (isPlaceholder) FontStyle.Italic else FontStyle.Normal,
+        modifier = Modifier.padding(bottom = 14.dp).fillMaxWidth()
+    )
+}
+
+@Composable
+private fun WarningBox(title: String, content: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 14.dp).height(IntrinsicSize.Min)) {
+        Box(Modifier.width(3.dp).fillMaxHeight().background(Red))
+        Column(
+            Modifier.weight(1f).background(RedBg).border(1.dp, RedBdr).padding(12.dp)
+        ) {
+            Text(title, fontSize = 8.sp, letterSpacing = 3.sp, color = Red, modifier = Modifier.padding(bottom = 6.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun NoteBox(title: String, content: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(bottom = 14.dp).height(IntrinsicSize.Min)) {
+        Box(Modifier.width(3.dp).fillMaxHeight().background(GoldDk))
+        Column(
+            Modifier.weight(1f).background(GoldBg).border(1.dp, GoldBdr).padding(12.dp)
+        ) {
+            Text(title, fontSize = 8.sp, letterSpacing = 3.sp, color = Gold, modifier = Modifier.padding(bottom = 6.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun HRule() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+}
+
+// ── Glitch overlay ────────────────────────────────────────────────────────────
+@Composable
+fun GlitchOverlay(engine: GlitchEngine, modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxSize()) {
+        // Lignes de bruit horizontales
+        engine.noiseLines.forEach { (posY, heightDp, alpha) ->
+            drawRect(
+                color = Teal.copy(alpha = alpha),
+                topLeft = Offset(engine.scanlineShift.dp.toPx(), posY * size.height),
+                size    = androidx.compose.ui.geometry.Size(size.width, heightDp.dp.toPx())
+            )
+        }
+        // Flash de surface
+        if (engine.flashIntensity > 0f) {
+            drawRect(color = T1.copy(alpha = engine.flashIntensity))
+        }
+    }
+}
