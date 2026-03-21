@@ -36,3 +36,4 @@ kotlin-js-store/
 .DS_Store
 Thumbs.db
 desktop.ini
+/composeApp/build/

@@ -1,14 +1,11 @@
 package igniterra.ui
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,22 +14,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
 import igniterra.strings.AppStrings
-import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -318,6 +309,12 @@ private fun CoverSection() {
                 Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
                 CoverMetaCell(AppStrings.Cover.Meta.rangeLabel, AppStrings.Cover.Meta.rangeValue, Modifier.weight(1f))
             }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+            Row(Modifier.fillMaxWidth()) {
+                CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
+                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                CoverMetaCell(AppStrings.Cover.Meta.author2Label, AppStrings.Cover.Meta.author2Value, Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(20.dp))
     }
@@ -388,6 +385,11 @@ private fun SpecsSection() {
         AppStrings.S02.Spec.ignitionLabel   to AppStrings.S02.Spec.ignitionValue,
         AppStrings.S02.Spec.archLabel       to AppStrings.S02.Spec.archValue,
         AppStrings.S02.Spec.combustionLabel to AppStrings.S02.Spec.combustionValue,
+        AppStrings.S02.Spec.dimensionsLabel  to AppStrings.S02.Spec.dimensionsValue,
+        AppStrings.S02.Spec.weightEmptyLabel to AppStrings.S02.Spec.weightEmptyValue,
+        AppStrings.S02.Spec.weightFullLabel  to AppStrings.S02.Spec.weightFullValue,
+        AppStrings.S02.Spec.materialsLabel   to AppStrings.S02.Spec.materialsValue,
+        AppStrings.S02.Spec.autonomyLabel    to AppStrings.S02.Spec.autonomyValue,
     )
     val rows = specs.chunked(2)
     Column(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr)) {
@@ -550,7 +552,7 @@ private fun SafetySection() {
 @Composable
 private fun CheckItem(text: String) {
     Row(Modifier.padding(vertical = 7.dp), verticalAlignment = Alignment.Top) {
-        Text("◆", fontSize = 8.sp, color = TealDk, modifier = Modifier.padding(top = 4.dp))
+        Text(">", fontSize = 8.sp, color = TealDk, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.width(10.dp))
         Text(text, fontSize = 12.sp, lineHeight = 19.sp, color = T2)
     }
@@ -560,9 +562,13 @@ private fun CheckItem(text: String) {
 @Composable
 private fun LegalSection() {
     SectionHead(AppStrings.S06.num, AppStrings.S06.title)
+    SubHead(AppStrings.S06.sub1Num, AppStrings.S06.sub1Title)
     Prose(AppStrings.S06.p1)
+    SubHead(AppStrings.S06.sub2Num, AppStrings.S06.sub2Title)
     Prose(AppStrings.S06.p2)
+    SubHead(AppStrings.S06.sub3Num, AppStrings.S06.sub3Title)
     Prose(AppStrings.S06.p3)
+    SubHead(AppStrings.S06.sub4Num, AppStrings.S06.sub4Title)
     Prose(AppStrings.S06.p4)
     Spacer(Modifier.height(20.dp))
     Box(Modifier.border(1.dp, GoldDk).padding(horizontal = 18.dp, vertical = 7.dp)) {

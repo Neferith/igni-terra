@@ -20,13 +20,13 @@ private const val BASE_WIDTH  = 1100f
 private const val BASE_HEIGHT = 760f
 
 fun main() = application {
-    CrackleSound.start()
+   // CrackleSound.start()
 
     val windowState = rememberWindowState(width = BASE_WIDTH.dp, height = BASE_HEIGHT.dp)
 
     Window(
         onCloseRequest = {
-            CrackleSound.stop()
+        //    CrackleSound.stop()
             exitApplication()
         },
         title = AppStrings.Meta.windowTitle,
