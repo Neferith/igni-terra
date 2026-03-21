@@ -324,6 +324,12 @@ private fun CoverSection() {
             }
         }
         Spacer(Modifier.height(20.dp))
+        Text(
+            "N° SÉRIE : ${AppStrings.serialNumber}",
+            fontSize = 9.sp, fontFamily = Mono,
+            color = T3, letterSpacing = 3.sp
+        )
+        Spacer(Modifier.height(20.dp))
     }
 }
 

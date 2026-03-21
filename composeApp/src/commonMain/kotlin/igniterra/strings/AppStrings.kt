@@ -2,6 +2,13 @@ package igniterra.strings
 
 object AppStrings {
 
+    val serialNumber: String = run {
+        val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789"
+        val part1 = (1..4).map { chars.random() }.joinToString("")
+        val part2 = (1..4).map { chars.random() }.joinToString("")
+        "IT-$part1-$part2"
+    }
+
     object Meta {
         const val windowTitle = "Igni Terra — Manuel Technique"
     }
