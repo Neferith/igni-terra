@@ -361,6 +361,7 @@ private fun ManualContent(
     onBadgeClick  : () -> Unit = {}
 ) {
     val scroll = rememberScrollState()
+    LaunchedEffect(section) { scroll.scrollTo(0) }
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
             when (section) {
