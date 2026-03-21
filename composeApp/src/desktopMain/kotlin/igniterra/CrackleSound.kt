@@ -4,6 +4,7 @@ import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.random.Random
 
 /**
@@ -151,5 +152,37 @@ actual object CrackleSound {
             it.isDaemon = true
             it.start()
         }
+    }
+
+    /**
+     * Son de déverrouillage — montée rapide + double tonalité (220Hz puis 440Hz).
+     * ~600ms total.
+     */
+    actual fun unlockSecret() {
+        Thread({
+            try {
+                val format  = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line    = AudioSystem.getSourceDataLine(format)
+                val samples = (SAMPLE_RATE * 0.6f).toInt()
+                val buf     = ByteArray(samples * 2)
+                line.open(format, buf.size * 2)
+                line.start()
+                for (i in 0 until samples) {
+                    val t    = i.toDouble() / SAMPLE_RATE
+                    // Montée de fréquence : 110Hz → 440Hz sur 300ms
+                    val freq = if (t < 0.3) 110.0 + (440.0 - 110.0) * (t / 0.3) else 440.0
+                    val env  = if (t < 0.3) t / 0.3 else exp(-4.0 * (t - 0.3))
+                    val tone = sin(2.0 * Math.PI * freq * t) * env * 0.7
+                    val noise = (Random.nextDouble() * 2.0 - 1.0) * exp(-10.0 * t) * 0.15
+                    val s = ((tone + noise) * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i * 2]     = (s.toInt() and 0xFF).toByte()
+                    buf[i * 2 + 1] = (s.toInt() shr 8).toByte()
+                }
+                line.write(buf, 0, buf.size)
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
     }
 }

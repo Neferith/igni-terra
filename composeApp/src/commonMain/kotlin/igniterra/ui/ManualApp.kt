@@ -58,7 +58,8 @@ enum class ManualSection(val num: String, val label: String) {
     COMPONENTS("03", "Composants"),
     FIRE_MODES("04", "Modes de tir"),
     SAFETY("05", "Sécurité"),
-    LEGAL("06", "Dispositions légales")
+    LEGAL("06", "Dispositions légales"),
+    SECRET("07", "Classifié")
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
@@ -78,18 +79,20 @@ fun ManualApp() {
 }
 
 @Composable
-fun ManualContent_Internal(recipient: AppStrings.Recipient) {
+private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     val glitch = remember { GlitchEngine() }
     val scope  = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         glitch.startLoop(scope)
-
         CrackleSound.openDocument()
     }
 
-    var selected    by remember { mutableStateOf(ManualSection.COVER) }
+
+    var selected       by remember { mutableStateOf(ManualSection.COVER) }
     LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }
-    var drawerOpen  by remember { mutableStateOf(false) }
+    var drawerOpen     by remember { mutableStateOf(false) }
+    var secretUnlocked by remember { mutableStateOf(false) }
+    var emblemClicks   by remember { mutableStateOf(0) }
     val (shakeX, shakeY) = glitch.contentShake
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -99,15 +102,26 @@ fun ManualContent_Internal(recipient: AppStrings.Recipient) {
             if (isPortrait) {
                 // ── Mode portrait : contenu plein écran + drawer overlay ──────
                 PortraitLayout(
-                    glitch      = glitch,
-                    selected    = selected,
-                    drawerOpen  = drawerOpen,
-                    shakeX      = shakeX,
-                    shakeY      = shakeY,
-                    recipient   = recipient,
-                    onSelect    = { selected = it; drawerOpen = false },
-                    onToggle    = { drawerOpen = !drawerOpen },
-                    onDismiss   = { drawerOpen = false },
+                    glitch          = glitch,
+                    selected        = selected,
+                    drawerOpen      = drawerOpen,
+                    shakeX          = shakeX,
+                    shakeY          = shakeY,
+                    recipient       = recipient,
+                    secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
+                    onSelect        = { selected = it; drawerOpen = false },
+                    onToggle        = { drawerOpen = !drawerOpen },
+                    onDismiss       = { drawerOpen = false },
+                    onEmblemClick   = {
+                        if (recipient.hasSecretAccess) {
+                            emblemClicks++
+                            if (emblemClicks >= 5) {
+                                secretUnlocked = true
+                                emblemClicks = 0
+                                CrackleSound.unlockSecret()
+                            }
+                        }
+                    }
                 )
             } else {
                 // ── Mode paysage / desktop : sidebar fixe ────────────────────
@@ -115,9 +129,29 @@ fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     Modifier.fillMaxSize().background(Bg)
                         .offset(shakeX.dp, shakeY.dp)
                 ) {
-                    ManualSidebar(selected) { selected = it }
+                    ManualSidebar(
+                        selected        = selected,
+                        secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
+                        onSelect        = { selected = it }
+                    )
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
-                    ManualContent(selected, Modifier.weight(1f).fillMaxHeight(),recipient)
+                    ManualContent(
+                        section    = selected,
+                        modifier   = Modifier.weight(1f).fillMaxHeight(),
+                        recipient  = recipient,
+                        emblemClicks    = emblemClicks,
+                        onEmblemClick   = {
+                            if (recipient.hasSecretAccess) {
+                                emblemClicks++
+                                if (emblemClicks >= 5) {
+                                    secretUnlocked = true
+                                    emblemClicks = 0
+
+                                    CrackleSound.unlockSecret()
+                                }
+                            }
+                        }
+                    )
                 }
             }
             GlitchOverlay(glitch)
@@ -127,15 +161,17 @@ fun ManualContent_Internal(recipient: AppStrings.Recipient) {
 
 @Composable
 private fun PortraitLayout(
-    glitch     : GlitchEngine,
-    selected   : ManualSection,
-    drawerOpen : Boolean,
-    shakeX     : Float,
-    shakeY     : Float,
-    recipient  : AppStrings.Recipient,
-    onSelect   : (ManualSection) -> Unit,
-    onToggle   : () -> Unit,
-    onDismiss  : () -> Unit,
+    glitch         : GlitchEngine,
+    selected       : ManualSection,
+    drawerOpen     : Boolean,
+    shakeX         : Float,
+    shakeY         : Float,
+    recipient      : AppStrings.Recipient,
+    secretUnlocked : Boolean = false,
+    onSelect       : (ManualSection) -> Unit,
+    onToggle       : () -> Unit,
+    onDismiss      : () -> Unit,
+    onEmblemClick  : () -> Unit = {},
 ) {
     val drawerWidth = 220.dp
     val offsetX by animateDpAsState(
@@ -151,7 +187,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient)
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient, onEmblemClick = onEmblemClick)
                 }
             }
         }
@@ -167,7 +203,11 @@ private fun PortraitLayout(
 
         // Drawer qui slide depuis la gauche
         Box(Modifier.offset(x = offsetX).width(drawerWidth).fillMaxHeight()) {
-            ManualSidebar(selected, onSelect)
+            ManualSidebar(
+                selected       = selected,
+                onSelect       = onSelect,
+                secretUnlocked = secretUnlocked
+            )
         }
     }
 }
@@ -216,7 +256,11 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit) {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 @Composable
-private fun ManualSidebar(selected: ManualSection, onSelect: (ManualSection) -> Unit) {
+private fun ManualSidebar(
+    selected       : ManualSection,
+    onSelect       : (ManualSection) -> Unit,
+    secretUnlocked : Boolean = false
+) {
     Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
         Column(Modifier.padding(18.dp)) {
             Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
@@ -230,7 +274,14 @@ private fun ManualSidebar(selected: ManualSection, onSelect: (ManualSection) -> 
         }
         HRule()
         ManualSection.entries.forEach { s ->
+            if (s == ManualSection.SECRET) return@forEach
             SideNavItem(s, s == selected) { onSelect(s) }
+        }
+        if (secretUnlocked) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+            SideNavItem(ManualSection.SECRET, selected == ManualSection.SECRET, accent = Red) {
+                onSelect(ManualSection.SECRET)
+            }
         }
         Spacer(Modifier.weight(1f))
         HRule()
@@ -250,7 +301,7 @@ private fun ManualSidebar(selected: ManualSection, onSelect: (ManualSection) -> 
 }
 
 @Composable
-private fun SideNavItem(section: ManualSection, active: Boolean, onClick: () -> Unit) {
+private fun SideNavItem(section: ManualSection, active: Boolean, accent: Color = Teal, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth()
             .clickable(onClick = { onClick(); CrackleSound.click() })
@@ -258,16 +309,16 @@ private fun SideNavItem(section: ManualSection, active: Boolean, onClick: () -> 
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.width(3.dp).height(16.dp).background(if (active) Teal else Color.Transparent))
+        Box(Modifier.width(3.dp).height(16.dp).background(if (active) accent else Color.Transparent))
         Spacer(Modifier.width(12.dp))
         Text(
             section.num, fontSize = 9.sp, fontFamily = Mono,
-            color = if (active) Teal else T3, modifier = Modifier.width(22.dp)
+            color = if (active) accent else T3, modifier = Modifier.width(22.dp)
         )
         Spacer(Modifier.width(6.dp))
         Text(
             section.label, fontSize = 11.sp, letterSpacing = 1.sp,
-            color = if (active) Teal else T2,
+            color = if (active) accent else T2,
             fontWeight = if (active) FontWeight.W500 else FontWeight.Normal
         )
     }
@@ -275,18 +326,25 @@ private fun SideNavItem(section: ManualSection, active: Boolean, onClick: () -> 
 
 // ── Content ───────────────────────────────────────────────────────────────────
 @Composable
-private fun ManualContent(section: ManualSection, modifier: Modifier, recipient: AppStrings.Recipient? = null) {
+private fun ManualContent(
+    section       : ManualSection,
+    modifier      : Modifier,
+    recipient     : AppStrings.Recipient? = null,
+    emblemClicks  : Int = 0,
+    onEmblemClick : () -> Unit = {}
+) {
     val scroll = rememberScrollState()
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
             when (section) {
-                ManualSection.COVER      -> CoverSection(recipient)
+                ManualSection.COVER      -> CoverSection(recipient, onEmblemClick)
                 ManualSection.OVERVIEW   -> OverviewSection()
                 ManualSection.SPECS      -> SpecsSection()
                 ManualSection.COMPONENTS -> ComponentsSection()
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
+                ManualSection.SECRET     -> SecretSection()
             }
             Spacer(Modifier.height(28.dp))
             HRule()
@@ -296,10 +354,8 @@ private fun ManualContent(section: ManualSection, modifier: Modifier, recipient:
                 Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
                 Text(AppStrings.Footer.classification, fontSize = 9.sp, fontFamily = Mono, color = T3)
             }
-
         }
-        WatermarkOverlay(Modifier.fillMaxSize())
-
+        WatermarkOverlay(Modifier.matchParentSize())
     }
 }
 
@@ -307,10 +363,10 @@ private fun ManualContent(section: ManualSection, modifier: Modifier, recipient:
 
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
-private fun CoverSection(recipient: AppStrings.Recipient? = null) {
+private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick: () -> Unit = {}) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
-        HexEmblem(Modifier.size(80.dp))
+        HexEmblem(Modifier.size(80.dp).clickable { onEmblemClick() })
         Spacer(Modifier.height(22.dp))
         Text(AppStrings.Header.organization, fontSize = 9.sp, letterSpacing = 3.sp, color = T3)
         Spacer(Modifier.height(10.dp))
@@ -333,12 +389,6 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null) {
                 Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
                 CoverMetaCell(AppStrings.Cover.Meta.rangeLabel, AppStrings.Cover.Meta.rangeValue, Modifier.weight(1f))
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
-            Row(Modifier.fillMaxWidth()) {
-                CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
-                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
-                CoverMetaCell(AppStrings.Cover.Meta.author2Label, AppStrings.Cover.Meta.author2Value, Modifier.weight(1f))
-            }
         }
         // Note de transmission
         if (recipient != null) {
@@ -354,7 +404,7 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null) {
                 Text(recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
             }
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             "N° SÉRIE : ${AppStrings.serialNumber}",
             fontSize = 9.sp, fontFamily = Mono,
@@ -816,4 +866,15 @@ private fun DiagramConnector() {
             Spacer(Modifier.height(2.dp))
         }
     }
+}
+
+// ── Section secrète ───────────────────────────────────────────────────────────
+@Composable
+private fun SecretSection() {
+    SectionHead(AppStrings.Secret.num, AppStrings.Secret.title)
+    WarningBox("ACCÈS RESTREINT") {
+        Prose("Ce document contient des informations classifiées. Toute divulgation non autorisée est passible de sanctions conformément aux dispositions légales en vigueur.")
+    }
+    Spacer(Modifier.height(8.dp))
+    Prose(AppStrings.Secret.body)
 }

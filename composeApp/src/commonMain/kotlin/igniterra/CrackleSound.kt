@@ -9,4 +9,6 @@ expect object CrackleSound {
     fun stop()
     fun click()
     fun openDocument()
+
+    fun unlockSecret()
 }

@@ -6,7 +6,9 @@ object AppStrings {
     data class Recipient(
         val displayName : String,
         val password    : String,
-        val note        : String
+        val note        : String,
+
+        val hasSecretAccess: Boolean = false
     )
 
     val recipients = listOf(
@@ -28,7 +30,8 @@ object AppStrings {
                     "Tu trouveras ici tout ce qu'il faut savoir sur l'Igni Terra. " +
             "En tant qu'officière, tu en es responsable auprès des novices. " +
                     "Les conditions d'usage sont non négociables." +
-            "— Eleanor Dubrie, DAE"
+            "— Eleanor Dubrie, DAE",
+            hasSecretAccess = true
         ),
         Recipient(
             displayName = "Alyx — Novice",
@@ -289,5 +292,13 @@ object AppStrings {
         const val docRef         = "DOC-NLRP-IT-0042 · REV.2"
         const val title          = "IGNI TERRA — MANUEL TECHNIQUE"
         const val classification = "CONFIDENTIEL"
+    }
+
+    // ── Section secrète ─────────────────────────────────────────────────────────
+    object Secret {
+        const val num   = "07"
+        const val label = "Classifié"
+        const val title = "Données Classifiées"
+        const val body  = "[À compléter — contenu visible uniquement par les destinataires autorisés]"
     }
 }

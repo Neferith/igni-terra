@@ -147,4 +147,31 @@ actual object CrackleSound {
             track.release()
         }, "igniterra-open").also { it.isDaemon = true; it.start() }
     }
+
+    actual fun unlockSecret() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.6).toInt()
+            val buf     = ShortArray(samples)
+            for (i in buf.indices) {
+                val t    = i.toDouble() / SAMPLE_RATE
+                val freq = if (t < 0.3) 110.0 + (440.0 - 110.0) * (t / 0.3) else 440.0
+                val env  = if (t < 0.3) t / 0.3 else kotlin.math.exp(-4.0 * (t - 0.3))
+                val tone = kotlin.math.sin(2.0 * kotlin.math.PI * freq * t) * env * 0.7
+                val noise = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-10.0 * t) * 0.15
+                buf[i] = ((tone + noise) * Short.MAX_VALUE).toInt()
+                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buf, 0, buf.size)
+            track.play()
+            Thread.sleep(700)
+            track.stop()
+            track.release()
+        }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
+    }
 }
