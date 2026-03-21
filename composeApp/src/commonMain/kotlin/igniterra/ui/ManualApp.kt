@@ -417,6 +417,12 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick:
                 Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
                 CoverMetaCell(AppStrings.Cover.Meta.rangeLabel, AppStrings.Cover.Meta.rangeValue, Modifier.weight(1f))
             }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+            Row(Modifier.fillMaxWidth()) {
+                CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
+                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                CoverMetaCell(AppStrings.Cover.Meta.author2Label, AppStrings.Cover.Meta.author2Value, Modifier.weight(1f))
+            }
         }
         // Note de transmission
         if (recipient != null) {

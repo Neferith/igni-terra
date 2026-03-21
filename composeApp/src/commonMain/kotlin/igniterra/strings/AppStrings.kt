@@ -15,52 +15,54 @@ object AppStrings {
         Recipient(
             displayName = "Lothaire — Novice",
             password    = "lotus",
-            note        = "Lothaire,"+
-
-                    "Je te confie ce manuel en espérant que tu en feras un usage mesuré. " +
-            "L'Igni Terra est un outil, pas une démonstration de force. " +
-                    "Lis les dispositions légales avec attention — elles ne sont pas là pour décorer." +
-            "— Eleanor Dubrie, DAE"
+            note        = "Lothaire,\n" +
+                    "Déjà j’espère que tu vas bien. Ne pense pas que ta disparition ne m’a pas inquiété, mais, quelles que soient les raisons, je n’ai aucun doute sur tes convictions et ta volonté. Tu as la capacité de te sortir des pires situations.\n" +
+                    "Maintenant, pour ce qui est de l’Igni Terra, je te prie d’en faire un usage modéré. Avec Damian, nous l’avons pensé comme un outil servant à calciner le mal, mais il peut être à double tranchant. Une arme reste une arme. Plus elle est puissante, plus elle doit être utilisée avec parcimonie.\n" +
+                    "— Eleanor Dubrie"
         ),
         Recipient(
             displayName = "Adrila — Officière de la Nouvelle Lune",
             password    = "adrenaline",
-            note        = "Adrila,"+
-
-                    "Tu trouveras ici tout ce qu'il faut savoir sur l'Igni Terra. " +
-            "En tant qu'officière, tu en es responsable auprès des novices. " +
-                    "Les conditions d'usage sont non négociables." +
-            "— Eleanor Dubrie, DAE",
+            note        = "Mon amour,\n" +
+                    "J’espère que tu apprécies tous les efforts que je fais pour la Compagnie. C’est aussi un cadeau pour toi.\n\n" +
+                    "Mon corps est passion.\n" +
+                    "Mais mon cœur reste raison.\n" +
+                    "À nous l'avenir.\n\n" +
+                    "— Eleanor Dubrie\n",
             hasSecretAccess = true
         ),
         Recipient(
-            displayName = "Alyx — Novice",
-            password    = "alyxia",
-            note        = "Alyx,"+
-
-                    "Ce manuel t'est confié à titre personnel. " +
-            "Prends le temps de le lire entièrement avant toute chose. " +
-                    "En cas de doute, tu poses l'arme et tu demandes." +
-            "— Eleanor Dubrie, DAE"
+            displayName = "Damian — Ingénieur de la Nouvelle Lune",
+            password    = "GardienG",
+            note        = "Damian,\n" +
+                    "J’espère que notre arme sera bien utilisée. Le défi de créer une telle arme m’excite au plus haut point, mais la seule idée de son usage m’effraie.\n" +
+                    "Je crois que je ne suis pas normal…\n" +
+                    "— Eleanor Dubrie",
+            hasSecretAccess = true
         ),
         Recipient(
-            displayName = "Wellan — Novice",
+            displayName = "Alyx — Occultiste",
+            password    = "akala",
+            note        = "Alyx,\n" +
+                    "Je n’ai pas encore eu le plaisir de discourir avec vous, même si à l’occasion ce sera avec plaisir.\n" +
+                    "L'Igni Terra n'est pas une arme ordinaire. Elle est surtout très dangereuse. Faites attention avec.\n" +
+                    "— Eleanor Dubrie\n"
+        ),
+        Recipient(
+            displayName = "Wellan — Chasseur",
             password    = "wellspring",
-            note        = "Wellan, "+
-                    "L'Igni Terra n'est pas une arme ordinaire. " +
-            "Ce manuel existe précisément pour que personne ne se blesse inutilement. " +
-                    "Respecte chaque point de la section sécurité." +
-            "— Eleanor Dubrie, DAE"
+            note        = "Wellan,\n" +
+                    "Je me souviens encore de l’échec de notre piège avec le chocobo rouge. Mais l’Igni Terra ne se retournera pas contre nous, si nous respectons les règles de sécurité.\n" +
+                    "— Eleanor Dubrie\n"
         ),
         Recipient(
-            displayName = "Kalyra — Novice",
+            displayName = "Kalyra — Pictomancienne",
             password    = "kalyxe",
             note        = "Kalyra,"+
 
-                    "Je te fais confiance pour utiliser ce qui suit avec discernement. " +
-            "L'arme est redoutable — c'est précisément pourquoi les règles existent. " +
-                    "Bonne lecture." +
-            "— Eleanor Dubrie, DAE"
+                    "Kalyra,\n" +
+                    "Je sais que vous êtes un artiste et nous voilà avec un outil qui est loin de faire dans la dentelle. Ce manuel doit vous aider à l’utiliser dans de bonnes conditions.\n" +
+                    "— Eleanor Dubrie\n"
         ),
     )
 
