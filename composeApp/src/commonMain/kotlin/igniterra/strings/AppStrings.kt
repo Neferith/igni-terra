@@ -2,6 +2,65 @@ package igniterra.strings
 
 object AppStrings {
 
+    // ── Destinataires ────────────────────────────────────────────────────────────
+    data class Recipient(
+        val displayName : String,
+        val password    : String,
+        val note        : String
+    )
+
+    val recipients = listOf(
+        Recipient(
+            displayName = "Lothaire — Novice",
+            password    = "lotus",
+            note        = "Lothaire,"+
+
+                    "Je te confie ce manuel en espérant que tu en feras un usage mesuré. " +
+            "L'Igni Terra est un outil, pas une démonstration de force. " +
+                    "Lis les dispositions légales avec attention — elles ne sont pas là pour décorer." +
+            "— Eleanor Dubrie, DAE"
+        ),
+        Recipient(
+            displayName = "Adrila — Officière de la Nouvelle Lune",
+            password    = "adrenaline",
+            note        = "Adrila,"+
+
+                    "Tu trouveras ici tout ce qu'il faut savoir sur l'Igni Terra. " +
+            "En tant qu'officière, tu en es responsable auprès des novices. " +
+                    "Les conditions d'usage sont non négociables." +
+            "— Eleanor Dubrie, DAE"
+        ),
+        Recipient(
+            displayName = "Alyx — Novice",
+            password    = "alyxia",
+            note        = "Alyx,"+
+
+                    "Ce manuel t'est confié à titre personnel. " +
+            "Prends le temps de le lire entièrement avant toute chose. " +
+                    "En cas de doute, tu poses l'arme et tu demandes." +
+            "— Eleanor Dubrie, DAE"
+        ),
+        Recipient(
+            displayName = "Wellan — Novice",
+            password    = "wellspring",
+            note        = "Wellan, "+
+                    "L'Igni Terra n'est pas une arme ordinaire. " +
+            "Ce manuel existe précisément pour que personne ne se blesse inutilement. " +
+                    "Respecte chaque point de la section sécurité." +
+            "— Eleanor Dubrie, DAE"
+        ),
+        Recipient(
+            displayName = "Kalyra — Novice",
+            password    = "kalyxe",
+            note        = "Kalyra,"+
+
+                    "Je te fais confiance pour utiliser ce qui suit avec discernement. " +
+            "L'arme est redoutable — c'est précisément pourquoi les règles existent. " +
+                    "Bonne lecture." +
+            "— Eleanor Dubrie, DAE"
+        ),
+    )
+
     val serialNumber: String = run {
         val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789"
         val part1 = (1..4).map { chars.random() }.joinToString("")

@@ -14,9 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -31,18 +29,18 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 // ── Palette ───────────────────────────────────────────────────────────────────
-private val Bg      = Color(0xFF07101E)
-private val Panel   = Color(0xFF0C1B30)
-private val Card    = Color(0xFF0E2040)
-private val Teal    = Color(0xFF38C4C4)
-private val TealDk  = Color(0xFF1C7070)
+val Bg      = Color(0xFF07101E)
+val Panel   = Color(0xFF0C1B30)
+public val Card    = Color(0xFF0E2040)
+val Teal    = Color(0xFF38C4C4)
+val TealDk  = Color(0xFF1C7070)
 private val Gold    = Color(0xFFC8A44A)
 private val GoldDk  = Color(0xFF7A6028)
-private val T1      = Color(0xFFD6EDF6)
-private val T2      = Color(0xFF6EA8C0)
+val T1      = Color(0xFFD6EDF6)
+val T2      = Color(0xFF6EA8C0)
 public val T3      = Color(0xFF365470)
-private val Bdr     = Color(0xFF152640)
-private val Red     = Color(0xFFC84040)
+val Bdr     = Color(0xFF152640)
+public val Red     = Color(0xFFC84040)
 private val RedBg   = Color(0x14C84040)
 private val RedBdr  = Color(0x40C84040)
 private val GoldBg  = Color(0x12C8A44A)
@@ -69,6 +67,18 @@ private const val PORTRAIT_THRESHOLD_DP = 600
 
 @Composable
 fun ManualApp() {
+    var recipient by remember { mutableStateOf<AppStrings.Recipient?>(null) }
+
+    if (recipient == null) {
+        LoginScreen { recipient = it }
+        return
+    }
+
+    ManualContent_Internal(recipient!!)
+}
+
+@Composable
+fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     val glitch = remember { GlitchEngine() }
     val scope  = rememberCoroutineScope()
     LaunchedEffect(Unit) { glitch.startLoop(scope) }
@@ -89,6 +99,7 @@ fun ManualApp() {
                     drawerOpen  = drawerOpen,
                     shakeX      = shakeX,
                     shakeY      = shakeY,
+                    recipient   = recipient,
                     onSelect    = { selected = it; drawerOpen = false },
                     onToggle    = { drawerOpen = !drawerOpen },
                     onDismiss   = { drawerOpen = false },
@@ -101,7 +112,7 @@ fun ManualApp() {
                 ) {
                     ManualSidebar(selected) { selected = it }
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
-                    ManualContent(selected, Modifier.weight(1f).fillMaxHeight())
+                    ManualContent(selected, Modifier.weight(1f).fillMaxHeight(),recipient)
                 }
             }
             GlitchOverlay(glitch)
@@ -116,6 +127,7 @@ private fun PortraitLayout(
     drawerOpen : Boolean,
     shakeX     : Float,
     shakeY     : Float,
+    recipient  : AppStrings.Recipient,
     onSelect   : (ManualSection) -> Unit,
     onToggle   : () -> Unit,
     onDismiss  : () -> Unit,
@@ -134,7 +146,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize())
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient)
                 }
             }
         }
@@ -258,12 +270,12 @@ private fun SideNavItem(section: ManualSection, active: Boolean, onClick: () -> 
 
 // ── Content ───────────────────────────────────────────────────────────────────
 @Composable
-private fun ManualContent(section: ManualSection, modifier: Modifier) {
+private fun ManualContent(section: ManualSection, modifier: Modifier, recipient: AppStrings.Recipient? = null) {
     val scroll = rememberScrollState()
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
             when (section) {
-                ManualSection.COVER      -> CoverSection()
+                ManualSection.COVER      -> CoverSection(recipient)
                 ManualSection.OVERVIEW   -> OverviewSection()
                 ManualSection.SPECS      -> SpecsSection()
                 ManualSection.COMPONENTS -> ComponentsSection()
@@ -290,7 +302,7 @@ private fun ManualContent(section: ManualSection, modifier: Modifier) {
 
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
-private fun CoverSection() {
+private fun CoverSection(recipient: AppStrings.Recipient? = null) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
         HexEmblem(Modifier.size(80.dp))
@@ -321,6 +333,20 @@ private fun CoverSection() {
                 CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
                 CoverMetaCell(AppStrings.Cover.Meta.author2Label, AppStrings.Cover.Meta.author2Value, Modifier.weight(1f))
+            }
+        }
+        // Note de transmission
+        if (recipient != null) {
+            Spacer(Modifier.height(20.dp))
+            Column(
+                Modifier.widthIn(max = 440.dp)
+                    .background(GoldBg)
+                    .border(1.dp, GoldBdr)
+                    .padding(16.dp)
+            ) {
+                Text("NOTE DE TRANSMISSION", fontSize = 7.sp, letterSpacing = 3.sp, color = Gold, fontFamily = Mono)
+                Spacer(Modifier.height(8.dp))
+                Text(recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
             }
         }
         Spacer(Modifier.height(20.dp))
