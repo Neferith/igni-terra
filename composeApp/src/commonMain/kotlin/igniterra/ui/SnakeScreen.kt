@@ -42,13 +42,20 @@ private val SMono    = FontFamily.Monospace
 @Composable
 fun SnakeOverlay(onDismiss: () -> Unit) {
     val game   = remember { SnakeGame() }
+    DisposableEffect(Unit) {
+        CrackleSound.snakeMusicStart()
+        onDispose { CrackleSound.snakeMusicStop() }
+    }
     val glitch = remember { GlitchEngine() }
     val scope  = rememberCoroutineScope()
     LaunchedEffect(Unit) { glitch.startLoop(scope) }
 
     // Glitch sur mort
     LaunchedEffect(game.alive) {
-        if (!game.alive) glitch.triggerNavGlitch(scope)
+        if (!game.alive) {
+            glitch.triggerNavGlitch(scope)
+            CrackleSound.snakeDie()
+        }
     }
 
     // Glitch sur nourriture mangée
@@ -57,6 +64,7 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
         if (game.score > lastScore) {
             lastScore = game.score
             glitch.triggerNavGlitch(scope)
+            CrackleSound.snakeEat()
         }
     }
 
@@ -148,7 +156,7 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
                     Text(
                         if (!game.started) "D-pad"
                         else if (!game.alive) "HORS LIGNE"
-                        else "SCORE${game.score}",
+                        else "SCORE ${game.score}",
                     fontSize = 8.sp, letterSpacing = 2.sp, fontFamily = SMono,
                     color = if (!game.alive) SRed else ST3,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
