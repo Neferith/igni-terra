@@ -4432,6 +4432,7 @@ export async function instantiate(imports={}, runInitializer=true) {
         'androidx.compose.ui.window.force_$external_prop_getter' : (_this) => _this.force,
         'androidx.compose.ui.window.ExtendedTouchEvent_$external_class_instanceof' : (x) => x instanceof ExtendedTouchEvent,
         'androidx.compose.ui.window.ExtendedTouchEvent_$external_class_get' : () => ExtendedTouchEvent,
+        'androidx.compose.foundation.text.EventListener' : (handler) => (event) => { handler(event) },
         'org.jetbrains.compose.resources.Intl_$external_fun' : () => new Intl(),
         'org.jetbrains.compose.resources.Locale_$external_fun' : (p0) => new Intl.Locale(p0),
         'org.jetbrains.compose.resources.language_$external_prop_getter' : (_this) => _this.language,
@@ -4467,8 +4468,124 @@ export async function instantiate(imports={}, runInitializer=true) {
                 src.start();
             } catch(e) {}
         },
-        'igniterra.windowInnerWidth' : () => window.innerWidth,
-        'igniterra.devicePixelRatio' : () => window.devicePixelRatio
+        'igniterra.jsOpenDocument' : () => {
+            try {
+                if (!window._igniterra_ctx) {
+                    window._igniterra_ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = window._igniterra_ctx;
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const sr      = ctx.sampleRate;
+                const samples = Math.floor(sr * 0.4);
+                const buf     = ctx.createBuffer(1, samples, sr);
+                const data    = buf.getChannelData(0);
+                for (let i = 0; i < samples; i++) {
+                    const t     = i / sr;
+                    const tone  = Math.sin(2 * Math.PI * 80 * t) * Math.exp(-3 * t);
+                    const noise = (Math.random() * 2 - 1) * Math.exp(-8 * t) * 0.3;
+                    data[i]     = (tone * 0.6 + noise) * 0.7;
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.connect(ctx.destination);
+                src.start();
+            } catch(e) {}
+        },
+        'igniterra.jsUnlockSecret' : () => {
+            try {
+                if (!window._igniterra_ctx) {
+                    window._igniterra_ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = window._igniterra_ctx;
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const sr      = ctx.sampleRate;
+                const samples = Math.floor(sr * 0.6);
+                const buf     = ctx.createBuffer(1, samples, sr);
+                const data    = buf.getChannelData(0);
+                for (let i = 0; i < samples; i++) {
+                    const t    = i / sr;
+                    const freq = t < 0.3 ? 110 + (440 - 110) * (t / 0.3) : 440;
+                    const env  = t < 0.3 ? t / 0.3 : Math.exp(-4 * (t - 0.3));
+                    const tone = Math.sin(2 * Math.PI * freq * t) * env * 0.7;
+                    const noise = (Math.random() * 2 - 1) * Math.exp(-10 * t) * 0.15;
+                    data[i] = tone + noise;
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.connect(ctx.destination);
+                src.start();
+            } catch(e) {}
+        },
+        'igniterra.jsSnakeMusicStart' : () => {
+            try {
+                if (!window._igniterra_ctx) window._igniterra_ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = window._igniterra_ctx;
+                if (ctx.state === 'suspended') { ctx.resume(); return; }
+                const melody = [523,494,440,392,330,392,440,0,392,330,294,330,392,440,392,0,349,392,440,523,440,392,349,0,392,440,494,440,392,330,294,0,523,494,440,392,330,392,440,0,392,330,294,330,392,440,392,0,349,392,440,523,440,392,349,0,392,440,494,440,392,330,294,0,523,587,659,587,523,494,440,0,440,523,587,523,440,392,330,0,523,494,440,523,587,523,440,0,494,440,392,330,294,330,262,0,523,494,440,392,330,392,440,0,392,330,294,330,392,440,392,0,349,392,440,523,440,392,349,0,392,440,494,440,392,330,294,0];
+                const noteDur = 0.12;
+                let noteIdx = 0;
+                window._igniterra_music_running = true;
+                function playNote() {
+                    if (!window._igniterra_music_running) return;
+                    const freq = melody[noteIdx % melody.length];
+                    noteIdx++;
+                    const samples = Math.floor(ctx.sampleRate * noteDur);
+                    const buf = ctx.createBuffer(1, samples, ctx.sampleRate);
+                    const data = buf.getChannelData(0);
+                    for (let i = 0; i < samples; i++) {
+                        const t = i / ctx.sampleRate;
+                        const env = i < samples * 0.05 ? i / (samples * 0.05) : 1.0;
+                        if (freq > 0) {
+                            const vibrato = 1.0 + 0.005 * Math.sin(2 * Math.PI * 5 * t);
+                            data[i] = Math.sin(2 * Math.PI * freq * vibrato * t) * env * 0.25;
+                        }
+                    }
+                    const src = ctx.createBufferSource();
+                    src.buffer = buf;
+                    src.connect(ctx.destination);
+                    src.start();
+                    src.onended = playNote;
+                }
+                playNote();
+            } catch(e) {}
+        },
+        'igniterra.jsSnakeMusicStop' : () => { window._igniterra_music_running = false; },
+        'igniterra.jsSnakeEat' : () => {
+            try {
+                const ctx = window._igniterra_ctx;
+                if (!ctx || ctx.state === 'suspended') return;
+                const sr = ctx.sampleRate;
+                const samples = Math.floor(sr * 0.08);
+                const buf = ctx.createBuffer(1, samples, sr);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < samples; i++) {
+                    const t = i / sr;
+                    const freq = t < 0.04 ? 523 : 784;
+                    data[i] = ((freq * t) % 1 < 0.5 ? 1 : -1) * 0.35;
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf; src.connect(ctx.destination); src.start();
+            } catch(e) {}
+        },
+        'igniterra.jsSnakeDie' : () => {
+            try {
+                const ctx = window._igniterra_ctx;
+                if (!ctx || ctx.state === 'suspended') return;
+                const sr = ctx.sampleRate;
+                const samples = Math.floor(sr * 0.5);
+                const buf = ctx.createBuffer(1, samples, sr);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < samples; i++) {
+                    const t = i / sr;
+                    const freq = 440 * Math.pow(0.5, t * 2);
+                    const env = Math.exp(-3 * t);
+                    data[i] = ((freq * t) % 1 < 0.5 ? 1 : -1) * env * 0.4;
+                }
+                const src = ctx.createBufferSource();
+                src.buffer = buf; src.connect(ctx.destination); src.start();
+            } catch(e) {}
+        },
+        'igniterra.windowInnerWidth' : () => window.innerWidth
     }
     
     // Placed here to give access to it from externals (js_code)
