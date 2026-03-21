@@ -52,6 +52,36 @@ class GlitchEngine {
         effects.forEach { scope.launch { it() } }
     }
 
+    // ── Glitch de navigation — court et sec ─────────────────────────────────────
+
+    fun triggerNavGlitch(scope: CoroutineScope) {
+        scope.launch { effectFlashNav() }
+        scope.launch { effectScanlineNav() }
+    }
+
+    private suspend fun effectFlashNav() {
+        flashIntensity = 0.08f
+        delay(40L)
+        flashIntensity = 0f
+        delay(30L)
+        flashIntensity = 0.04f
+        delay(30L)
+        flashIntensity = 0f
+    }
+
+    private suspend fun effectScanlineNav() {
+        repeat(3) {
+            scanlineShift = Random.nextFloat() * 8f - 4f
+            delay(35L)
+        }
+        scanlineShift = 0f
+        noiseLines = List(2) {
+            Triple(Random.nextFloat(), Random.nextFloat() * 2f + 1f, 0.2f)
+        }
+        delay(60L)
+        noiseLines = emptyList()
+    }
+
     // ── Effets ────────────────────────────────────────────────────────────────
 
     private suspend fun effectScanlineShift() {

@@ -84,6 +84,7 @@ fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     LaunchedEffect(Unit) { glitch.startLoop(scope) }
 
     var selected    by remember { mutableStateOf(ManualSection.COVER) }
+    LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }
     var drawerOpen  by remember { mutableStateOf(false) }
     val (shakeX, shakeY) = glitch.contentShake
 
