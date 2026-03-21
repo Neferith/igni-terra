@@ -243,13 +243,14 @@ object AppStrings {
         }
 
         val checklist = listOf(
-            "Combinaison ignifugée intégrale portée par l'opérateur lors de l'aprentissage. Non nécessaire en mission.",
+            "Combinaison ignifugée intégrale portée par l'opérateur lors de l'apprentissage. Non nécessaire en mission.",
             "Dissipateur thermique installé et vérifié.",
             "Zone dégagée sur au moins 20 yalms dans la direction de tir.",
             "Absence de personnel non protégé dans un rayon de 5 yalms.",
             "Intégrité des électrodes vérifiée visuellement avant activation.",
             "Cristal de foudre correctement enchâssé dans son logement en caoutchouc traité.",
-            "Réserve d'agrégat éthérique scellée jusqu'au moment du tir."
+            "Réserve d'agrégat éthérique scellée jusqu'au moment du tir.",
+            "Le premier qui appuie cinq fois sur le bouton confidentiel, avant la fin de l'entraînement n'obtiendra pas sa certification."
         )
 
         object Activation {
