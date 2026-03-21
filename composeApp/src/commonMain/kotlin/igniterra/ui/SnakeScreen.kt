@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -39,8 +41,24 @@ private val SMono    = FontFamily.Monospace
 
 @Composable
 fun SnakeOverlay(onDismiss: () -> Unit) {
-    val game  = remember { SnakeGame() }
-    val scope = rememberCoroutineScope()
+    val game   = remember { SnakeGame() }
+    val glitch = remember { GlitchEngine() }
+    val scope  = rememberCoroutineScope()
+    LaunchedEffect(Unit) { glitch.startLoop(scope) }
+
+    // Glitch sur mort
+    LaunchedEffect(game.alive) {
+        if (!game.alive) glitch.triggerNavGlitch(scope)
+    }
+
+    // Glitch sur nourriture mangée
+    var lastScore by remember { mutableStateOf(0) }
+    LaunchedEffect(game.score) {
+        if (game.score > lastScore) {
+            lastScore = game.score
+            glitch.triggerNavGlitch(scope)
+        }
+    }
 
     // Game loop
     LaunchedEffect(game.alive, game.started, game.demoMode) {
@@ -107,7 +125,10 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                GameGrid(game)
+                Box {
+                    GameGrid(game)
+                    GlitchOverlay(glitch, Modifier.matchParentSize())
+                }
                 // D-pad + status à droite de la grille
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
