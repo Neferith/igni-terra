@@ -65,6 +65,61 @@ class SnakeGame(val cols: Int = 20, val rows: Int = 16) {
         }
     }
 
+    // ── Mode DEMO ─────────────────────────────────────────────────────────────
+
+    var demoMode by mutableStateOf(false)
+        private set
+
+    fun toggleDemo() {
+        demoMode = !demoMode
+        if (demoMode && !started) started = true
+    }
+
+    /** Calcule la prochaine direction pour aller vers la nourriture sans collision immédiate. */
+    fun demoTick() {
+        if (!alive) { reset(); return }
+
+        val head = snake.first()
+        val dx   = food.x - head.x
+        val dy   = food.y - head.y
+
+        // Directions candidates triées : d'abord la plus directe
+        val preferred = buildList {
+            if (kotlin.math.abs(dx) >= kotlin.math.abs(dy)) {
+                add(if (dx > 0) Direction.RIGHT else Direction.LEFT)
+                add(if (dy > 0) Direction.DOWN  else Direction.UP)
+            } else {
+                add(if (dy > 0) Direction.DOWN  else Direction.UP)
+                add(if (dx > 0) Direction.RIGHT else Direction.LEFT)
+            }
+            // Ajoute les autres en fallback
+            Direction.entries.forEach { if (!contains(it)) add(it) }
+        }
+
+        val forbidden = when (dir) {
+            Direction.UP    -> Direction.DOWN
+            Direction.DOWN  -> Direction.UP
+            Direction.LEFT  -> Direction.RIGHT
+            Direction.RIGHT -> Direction.LEFT
+        }
+
+        // Choisit la première direction sûre
+        for (candidate in preferred) {
+            if (candidate == forbidden) continue
+            val next = when (candidate) {
+                Direction.UP    -> Cell(head.x, head.y - 1)
+                Direction.DOWN  -> Cell(head.x, head.y + 1)
+                Direction.LEFT  -> Cell(head.x - 1, head.y)
+                Direction.RIGHT -> Cell(head.x + 1, head.y)
+            }
+            if (next.x in 0 until cols && next.y in 0 until rows && next !in snake) {
+                dir = candidate
+                break
+            }
+        }
+        tick()
+    }
+
     fun reset() {
         val start = Cell(cols / 2, rows / 2)
         snake   = listOf(start)

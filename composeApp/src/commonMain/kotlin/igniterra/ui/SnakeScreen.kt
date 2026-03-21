@@ -43,11 +43,11 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     // Game loop
-    LaunchedEffect(game.alive, game.started) {
+    LaunchedEffect(game.alive, game.started, game.demoMode) {
         if (!game.alive || !game.started) return@LaunchedEffect
         while (game.alive && game.started) {
-            delay(150L)
-            game.tick()
+            delay(if (game.demoMode) 100L else 150L)
+            if (game.demoMode) game.demoTick() else game.tick()
         }
     }
 
@@ -81,6 +81,15 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
                     }
                     Box(
                         Modifier
+                            .border(1.dp, if (game.demoMode) STeal else SBdr)
+                            .clickable { CrackleSound.click(); game.toggleDemo() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text("DEMO", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = SMono,
+                            color = if (game.demoMode) STeal else ST3)
+                    }
+                    Box(
+                        Modifier
                             .border(1.dp, SBdr)
                             .clickable { CrackleSound.click(); onDismiss() }
                             .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -104,7 +113,7 @@ fun SnakeOverlay(onDismiss: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    DPad { dir ->
+                    DPad(enabled = !game.demoMode) { dir ->
                         CrackleSound.click()
                         val head = game.snake.first()
                         val target = when (dir) {
@@ -213,7 +222,7 @@ private fun GameGrid(game: SnakeGame) {
 
 // ── D-pad ─────────────────────────────────────────────────────────────────────
 @Composable
-private fun DPad(onDirection: (Direction) -> Unit) {
+private fun DPad(enabled: Boolean = true, onDirection: (Direction) -> Unit) {
     val btnSize = 28.dp
     val totalW  = btnSize * 3
 
@@ -242,7 +251,7 @@ private fun DPad(onDirection: (Direction) -> Unit) {
 }
 
 @Composable
-private fun ArrowCanvas(dir: Direction) {
+private fun ArrowCanvas(dir: Direction, color: Color = STeal) {
     Canvas(Modifier.size(14.dp)) {
         val w = size.width
         val h = size.height
@@ -270,7 +279,7 @@ private fun ArrowCanvas(dir: Direction) {
             }
         }
         path.close()
-        drawPath(path, STeal)
+        drawPath(path, color)
     }
 }
 
