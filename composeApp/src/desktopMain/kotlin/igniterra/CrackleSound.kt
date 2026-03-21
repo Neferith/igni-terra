@@ -185,4 +185,107 @@ actual object CrackleSound {
             } catch (_: Exception) {}
         }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
     }
+
+    // ── Sons Snake ────────────────────────────────────────────────────────────
+
+
+    private const val NOTE_DUR  = 0.12f  // durée d'une note en secondes
+    private const val MUSIC_VOL = 0.18f
+
+    @Volatile private var musicRunning = false
+
+    // Mélodie 8-bit — notes en Hz
+    private val MELODY = floatArrayOf(
+        523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 587f, 659f, 587f, 523f, 494f, 440f, 0f, 440f, 523f, 587f, 523f, 440f, 392f, 330f, 0f, 523f, 494f, 440f, 523f, 587f, 523f, 440f, 0f, 494f, 440f, 392f, 330f, 294f, 330f, 262f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f
+    )
+
+
+    actual fun snakeMusicStart() {
+        if (musicRunning) return
+        musicRunning = true
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line   = AudioSystem.getSourceDataLine(format)
+                val noteSamples = (SAMPLE_RATE * NOTE_DUR).toInt()
+                val buf = ByteArray(noteSamples * 2)
+                line.open(format, buf.size * 4)
+                line.start()
+                var noteIdx = 0
+                while (musicRunning) {
+                    val freq = MELODY[noteIdx % MELODY.size]
+                    for (i in 0 until noteSamples) {
+                        val t   = i.toDouble() / SAMPLE_RATE
+                        val env = if (i < noteSamples * 0.1) i / (noteSamples * 0.1) else 1.0
+                        val s   = if (freq > 0f) {
+                            // Sinus avec vibrato léger 5Hz, depth 0.5%
+                            val vibrato = 1.0 + 0.005 * sin(2.0 * Math.PI * 5.0 * t)
+                            sin(2.0 * Math.PI * freq * vibrato * t) * env * MUSIC_VOL
+                        } else 0.0
+                        val sample = (s * Short.MAX_VALUE).toInt()
+                            .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                        buf[i * 2]     = (sample.toInt() and 0xFF).toByte()
+                        buf[i * 2 + 1] = (sample.toInt() shr 8).toByte()
+                    }
+                    line.write(buf, 0, buf.size)
+                    noteIdx++
+                }
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-snake-music").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun snakeMusicStop() { musicRunning = false }
+
+    actual fun snakeEat() {
+        Thread({
+            try {
+                val format  = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line    = AudioSystem.getSourceDataLine(format)
+                val samples = (SAMPLE_RATE * 0.08f).toInt()
+                val buf     = ByteArray(samples * 2)
+                line.open(format, buf.size)
+                line.start()
+                // Deux bips montants rapides
+                for (i in 0 until samples) {
+                    val t    = i.toDouble() / SAMPLE_RATE
+                    val freq = if (t < 0.04) 523.0 else 784.0
+                    val phase = (freq * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.35 * Short.MAX_VALUE
+                    buf[i * 2]     = (s.toInt() and 0xFF).toByte()
+                    buf[i * 2 + 1] = (s.toInt() shr 8).toByte()
+                }
+                line.write(buf, 0, buf.size)
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-eat").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun snakeDie() {
+        Thread({
+            try {
+                val format  = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line    = AudioSystem.getSourceDataLine(format)
+                val samples = (SAMPLE_RATE * 0.5f).toInt()
+                val buf     = ByteArray(samples * 2)
+                line.open(format, buf.size)
+                line.start()
+                // Descente chromatique
+                for (i in 0 until samples) {
+                    val t    = i.toDouble() / SAMPLE_RATE
+                    val freq = 440.0 * Math.pow(0.5, t * 2.0)  // descente sur 2 octaves
+                    val env  = exp(-3.0 * t)
+                    val phase = (freq * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * env * 0.4 * Short.MAX_VALUE
+                    buf[i * 2]     = (s.toInt() and 0xFF).toByte()
+                    buf[i * 2 + 1] = (s.toInt() shr 8).toByte()
+                }
+                line.write(buf, 0, buf.size)
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-die").also { it.isDaemon = true; it.start() }
+    }
 }

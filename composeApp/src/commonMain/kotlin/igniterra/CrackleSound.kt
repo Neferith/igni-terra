@@ -11,4 +11,8 @@ expect object CrackleSound {
     fun openDocument()
 
     fun unlockSecret()
+    fun snakeEat()
+    fun snakeDie()
+    fun snakeMusicStart()
+    fun snakeMusicStop()
 }

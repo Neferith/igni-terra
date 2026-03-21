@@ -174,4 +174,78 @@ actual object CrackleSound {
             track.release()
         }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
     }
+
+    @Volatile private var musicRunning = false
+
+    private val melody = floatArrayOf(
+        523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 587f, 659f, 587f, 523f, 494f, 440f, 0f, 440f, 523f, 587f, 523f, 440f, 392f, 330f, 0f, 523f, 494f, 440f, 523f, 587f, 523f, 440f, 0f, 494f, 440f, 392f, 330f, 294f, 330f, 262f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f
+    )
+
+    actual fun snakeMusicStart() {
+        if (musicRunning) return
+        musicRunning = true
+        Thread({
+            val noteSamples = (SAMPLE_RATE * 0.12).toInt()
+            var noteIdx = 0
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(noteSamples * 2 * 4)
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .build()
+            track.play()
+            while (musicRunning) {
+                val freq = melody[noteIdx % melody.size]
+                val buf = ShortArray(noteSamples)
+                for (i in buf.indices) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val env = if (i < noteSamples * 0.05) i / (noteSamples * 0.05) else 1.0
+                    buf[i] = if (freq > 0f) {
+                        val vibrato = 1.0 + 0.005 * kotlin.math.sin(2.0 * kotlin.math.PI * 5.0 * t)
+                        (kotlin.math.sin(2.0 * kotlin.math.PI * freq * vibrato * t) * env * 0.25 * Short.MAX_VALUE).toInt().toShort()
+                    } else 0
+                }
+                track.write(buf, 0, buf.size)
+                noteIdx++
+            }
+            track.stop(); track.release()
+        }, "igniterra-snake-music").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun snakeMusicStop() { musicRunning = false }
+
+    actual fun snakeEat() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.08).toInt()
+            val buf = ShortArray(samples)
+            for (i in buf.indices) {
+                val t = i.toDouble() / SAMPLE_RATE
+                val freq = if (t < 0.04) 523.0 else 784.0
+                val phase = (freq * t) % 1.0
+                buf[i] = ((if (phase < 0.5) 1.0 else -1.0) * 0.35 * Short.MAX_VALUE).toInt().toShort()
+            }
+            val track = AudioTrack.Builder().setAudioAttributes(audioAttributes()).setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2).setTransferMode(AudioTrack.MODE_STATIC).build()
+            track.write(buf, 0, buf.size); track.play()
+            Thread.sleep(100); track.stop(); track.release()
+        }, "igniterra-eat").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun snakeDie() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.5).toInt()
+            val buf = ShortArray(samples)
+            for (i in buf.indices) {
+                val t = i.toDouble() / SAMPLE_RATE
+                val freq = 440.0 * kotlin.math.exp(-t * kotlin.math.ln(2.0) * 2)
+                val env = kotlin.math.exp(-3.0 * t)
+                val phase = (freq * t) % 1.0
+                buf[i] = ((if (phase < 0.5) 1.0 else -1.0) * env * 0.4 * Short.MAX_VALUE).toInt().toShort()
+            }
+            val track = AudioTrack.Builder().setAudioAttributes(audioAttributes()).setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2).setTransferMode(AudioTrack.MODE_STATIC).build()
+            track.write(buf, 0, buf.size); track.play()
+            Thread.sleep(600); track.stop(); track.release()
+        }, "igniterra-die").also { it.isDaemon = true; it.start() }
+    }
 }
