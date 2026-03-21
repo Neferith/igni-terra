@@ -8,4 +8,5 @@ expect object CrackleSound {
     fun start()
     fun stop()
     fun click()
+    fun openDocument()
 }

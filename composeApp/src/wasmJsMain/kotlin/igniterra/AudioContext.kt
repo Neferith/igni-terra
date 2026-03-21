@@ -27,8 +27,35 @@ package igniterra
 }""")
 private external fun jsClick()
 
+@JsFun("""() => {
+    try {
+        if (!window._igniterra_ctx) {
+            window._igniterra_ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const ctx = window._igniterra_ctx;
+        if (ctx.state === 'suspended') { ctx.resume(); return; }
+        const sr      = ctx.sampleRate;
+        const samples = Math.floor(sr * 0.4);
+        const buf     = ctx.createBuffer(1, samples, sr);
+        const data    = buf.getChannelData(0);
+        for (let i = 0; i < samples; i++) {
+            const t     = i / sr;
+            const tone  = Math.sin(2 * Math.PI * 80 * t) * Math.exp(-3 * t);
+            const noise = (Math.random() * 2 - 1) * Math.exp(-8 * t) * 0.3;
+            data[i]     = (tone * 0.6 + noise) * 0.7;
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start();
+    } catch(e) {}
+}""")
+private external fun jsOpenDocument()
+
 actual object CrackleSound {
     actual fun start() {}
     actual fun stop()  {}
     actual fun click() = jsClick()
+
+    actual fun openDocument() = jsOpenDocument()
 }

@@ -81,7 +81,11 @@ fun ManualApp() {
 fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     val glitch = remember { GlitchEngine() }
     val scope  = rememberCoroutineScope()
-    LaunchedEffect(Unit) { glitch.startLoop(scope) }
+    LaunchedEffect(Unit) {
+        glitch.startLoop(scope)
+
+        CrackleSound.openDocument()
+    }
 
     var selected    by remember { mutableStateOf(ManualSection.COVER) }
     LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }

@@ -122,4 +122,29 @@ actual object CrackleSound {
             it.start()
         }
     }
+
+    actual fun openDocument() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.4).toInt()
+            val buf     = ShortArray(samples)
+            for (i in buf.indices) {
+                val t      = i.toDouble() / SAMPLE_RATE
+                val tone   = kotlin.math.sin(2.0 * kotlin.math.PI * 80.0 * t) * kotlin.math.exp(-3.0 * t)
+                val noise  = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-8.0 * t) * 0.3
+                buf[i]     = ((tone * 0.6 + noise) * 0.7 * Short.MAX_VALUE)
+                    .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buf, 0, buf.size)
+            track.play()
+            Thread.sleep(500)
+            track.stop()
+            track.release()
+        }, "igniterra-open").also { it.isDaemon = true; it.start() }
+    }
 }

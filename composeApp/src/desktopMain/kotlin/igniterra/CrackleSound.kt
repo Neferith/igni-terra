@@ -73,6 +73,43 @@ actual object CrackleSound {
         line.close()
     }
 
+    /**
+     * Son d'ouverture du document — grave et solennel.
+     * Bruit brun court + tonalité basse avec decay lent (~400ms).
+     */
+    actual fun openDocument() {
+        Thread({
+            try {
+                val format  = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line    = AudioSystem.getSourceDataLine(format)
+                val samples = (SAMPLE_RATE * 0.4f).toInt()  // 400ms
+                val buf     = ByteArray(samples * 2)
+
+                line.open(format, buf.size * 2)
+                line.start()
+
+                for (i in 0 until samples) {
+                    val t       = i.toDouble() / SAMPLE_RATE
+                    // Ton grave à 80Hz avec decay lent
+                    val tone    = kotlin.math.sin(2.0 * kotlin.math.PI * 80.0 * t) * exp(-3.0 * t)
+                    // Bruit brun léger par-dessus
+                    val noise   = (Random.nextDouble() * 2.0 - 1.0) * exp(-8.0 * t) * 0.3
+                    val sample  = ((tone * 0.6 + noise) * 0.7 * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i * 2]     = (sample.toInt() and 0xFF).toByte()
+                    buf[i * 2 + 1] = (sample.toInt() shr 8).toByte()
+                }
+
+                line.write(buf, 0, buf.size)
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-open").also {
+            it.isDaemon = true
+            it.start()
+        }
+    }
+
     // ── Clic de navigation ────────────────────────────────────────────────────
 
     /**
