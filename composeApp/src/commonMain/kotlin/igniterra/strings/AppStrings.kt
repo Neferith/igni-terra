@@ -50,18 +50,16 @@ object AppStrings {
         ),
         Recipient(
             displayName = "Wellan — Chasseur",
-            password    = "wellspring",
+            password    = "piegeachocobo",
             note        = "Wellan,\n" +
                     "Je me souviens encore de l’échec de notre piège avec le chocobo rouge. Mais l’Igni Terra ne se retournera pas contre nous, si nous respectons les règles de sécurité.\n" +
                     "— Eleanor Dubrie\n"
         ),
         Recipient(
             displayName = "Kalyra — Pictomancienne",
-            password    = "kalyxe",
-            note        = "Kalyra,"+
-
-                    "Kalyra,\n" +
-                    "Je sais que vous êtes un artiste et nous voilà avec un outil qui est loin de faire dans la dentelle. Ce manuel doit vous aider à l’utiliser dans de bonnes conditions.\n" +
+            password    = "bravoure",
+            note        = "Kalyra,\n" +
+                    "Je sais que vous êtes une artiste et nous voilà avec un outil qui est loin de faire dans la dentelle. Ce manuel doit vous aider à l’utiliser dans de bonnes conditions.\n" +
                     "— Eleanor Dubrie\n"
         ),
     )
