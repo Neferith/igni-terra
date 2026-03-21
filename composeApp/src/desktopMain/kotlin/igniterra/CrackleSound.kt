@@ -16,6 +16,8 @@ import kotlin.random.Random
 actual object CrackleSound {
 
     private const val SAMPLE_RATE  = 44100f
+    @Volatile var globalVolume: Float = 1.0f
+        private set
     private const val BUFFER_BYTES = 2048
     private const val BASE_VOLUME  = 0.018f
     private const val CRACKLE_PROB = 0.0015f
@@ -52,7 +54,7 @@ actual object CrackleSound {
         while (running) {
             for (i in buf.indices step 2) {
                 brown = (brown + (Random.nextDouble() * 2.0 - 1.0) * 0.08).coerceIn(-1.0, 1.0)
-                var sample = brown * BASE_VOLUME
+                var sample = brown * BASE_VOLUME * globalVolume
 
                 if (crackleLeft > 0) {
                     sample += crackleAmp * (Random.nextDouble() * 2.0 - 1.0)
@@ -138,7 +140,7 @@ actual object CrackleSound {
                     val t      = i.toDouble() / SAMPLE_RATE
                     val env    = exp(-CLICK_DECAY * t)
                     val noise  = Random.nextDouble() * 2.0 - 1.0
-                    val sample = (noise * env * CLICK_VOLUME * Short.MAX_VALUE).toInt()
+                    val sample = (noise * env * CLICK_VOLUME * globalVolume * Short.MAX_VALUE).toInt()
                         .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
                     buf[i * 2]     = (sample.toInt() and 0xFF).toByte()
                     buf[i * 2 + 1] = (sample.toInt() shr 8).toByte()
@@ -199,6 +201,7 @@ actual object CrackleSound {
         523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 587f, 659f, 587f, 523f, 494f, 440f, 0f, 440f, 523f, 587f, 523f, 440f, 392f, 330f, 0f, 523f, 494f, 440f, 523f, 587f, 523f, 440f, 0f, 494f, 440f, 392f, 330f, 294f, 330f, 262f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f
     )
 
+    actual fun setVolume(volume: Float) { globalVolume = volume.coerceIn(0f, 1f) }
 
     actual fun snakeMusicStart() {
         if (musicRunning) return
@@ -220,7 +223,7 @@ actual object CrackleSound {
                         val s   = if (freq > 0f) {
                             // Sinus avec vibrato léger 5Hz, depth 0.5%
                             val vibrato = 1.0 + 0.005 * sin(2.0 * Math.PI * 5.0 * t)
-                            sin(2.0 * Math.PI * freq * vibrato * t) * env * MUSIC_VOL
+                            sin(2.0 * Math.PI * freq * vibrato * t) * env * MUSIC_VOL * globalVolume
                         } else 0.0
                         val sample = (s * Short.MAX_VALUE).toInt()
                             .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()

@@ -6,6 +6,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -286,6 +287,9 @@ private fun ManualSidebar(
     secretUnlocked : Boolean = false,
     onBadgeClick  : () -> Unit = {},
 ) {
+    var volume by remember { mutableStateOf(1f) }
+    var muted  by remember { mutableStateOf(false) }
+
     Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
         Column(Modifier.padding(18.dp)) {
             Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
@@ -309,6 +313,47 @@ private fun ManualSidebar(
             }
         }
         Spacer(Modifier.weight(1f))
+        HRule()
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
+                Box(
+                    Modifier
+                        .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
+                        .clickable {
+                            muted = !muted
+                            CrackleSound.setVolume(if (muted) 0f else volume)
+                            CrackleSound.click()
+                        }
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        if (muted) "MUET" else "ON",
+                        fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
+                        color = if (muted) Red.copy(alpha = 0.5f) else TealDk
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Slider(
+                value = if (muted) 0f else volume,
+                onValueChange = { v ->
+                    volume = v
+                    if (muted && v > 0f) muted = false
+                    CrackleSound.setVolume(v)
+                },
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                colors = androidx.compose.material.SliderDefaults.colors(
+                    thumbColor         = Teal,
+                    activeTrackColor   = Teal,
+                    inactiveTrackColor = Bdr
+                )
+            )
+        }
         HRule()
         Row(Modifier.padding(14.dp)) {
             Box(

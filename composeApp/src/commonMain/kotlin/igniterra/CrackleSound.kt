@@ -15,4 +15,5 @@ expect object CrackleSound {
     fun snakeDie()
     fun snakeMusicStart()
     fun snakeMusicStop()
+    fun setVolume(volume: Float)  // 0.0 = muet, 1.0 = max
 }

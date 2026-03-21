@@ -20,6 +20,8 @@ actual object CrackleSound {
     private const val CLICK_DECAY   = 180.0
 
     @Volatile private var running = false
+    @Volatile var globalVolume: Float = 1.0f
+        private set
 
     private fun audioAttributes() = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -71,7 +73,7 @@ actual object CrackleSound {
         while (running) {
             for (i in buf.indices) {
                 brown = (brown + (Random.nextDouble() * 2.0 - 1.0) * 0.08).coerceIn(-1.0, 1.0)
-                var sample = brown * BASE_VOLUME
+                var sample = brown * BASE_VOLUME * globalVolume
 
                 if (crackleLeft > 0) {
                     sample += crackleAmp * (Random.nextDouble() * 2.0 - 1.0)
@@ -92,6 +94,60 @@ actual object CrackleSound {
     }
 
     // ── Clic de navigation ────────────────────────────────────────────────────
+
+    actual fun setVolume(volume: Float) { globalVolume = volume.coerceIn(0f, 1f) }
+
+    actual fun unlockSecret() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.6).toInt()
+            val buf     = ShortArray(samples)
+            for (i in buf.indices) {
+                val t    = i.toDouble() / SAMPLE_RATE
+                val freq = if (t < 0.3) 110.0 + (440.0 - 110.0) * (t / 0.3) else 440.0
+                val env  = if (t < 0.3) t / 0.3 else kotlin.math.exp(-4.0 * (t - 0.3))
+                val tone = kotlin.math.sin(2.0 * kotlin.math.PI * freq * t) * env * 0.7
+                val noise = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-10.0 * t) * 0.15
+                buf[i] = ((tone + noise) * Short.MAX_VALUE).toInt()
+                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buf, 0, buf.size)
+            track.play()
+            Thread.sleep(700)
+            track.stop()
+            track.release()
+        }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun openDocument() {
+        Thread({
+            val samples = (SAMPLE_RATE * 0.4).toInt()
+            val buf     = ShortArray(samples)
+            for (i in buf.indices) {
+                val t      = i.toDouble() / SAMPLE_RATE
+                val tone   = kotlin.math.sin(2.0 * kotlin.math.PI * 80.0 * t) * kotlin.math.exp(-3.0 * t)
+                val noise  = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-8.0 * t) * 0.3
+                buf[i]     = ((tone * 0.6 + noise) * 0.7 * Short.MAX_VALUE)
+                    .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+            }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(samples * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buf, 0, buf.size)
+            track.play()
+            Thread.sleep(500)
+            track.stop()
+            track.release()
+        }, "igniterra-open").also { it.isDaemon = true; it.start() }
+    }
 
     actual fun click() {
         Thread({
@@ -123,58 +179,6 @@ actual object CrackleSound {
         }
     }
 
-    actual fun openDocument() {
-        Thread({
-            val samples = (SAMPLE_RATE * 0.4).toInt()
-            val buf     = ShortArray(samples)
-            for (i in buf.indices) {
-                val t      = i.toDouble() / SAMPLE_RATE
-                val tone   = kotlin.math.sin(2.0 * kotlin.math.PI * 80.0 * t) * kotlin.math.exp(-3.0 * t)
-                val noise  = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-8.0 * t) * 0.3
-                buf[i]     = ((tone * 0.6 + noise) * 0.7 * Short.MAX_VALUE)
-                    .toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-            }
-            val track = AudioTrack.Builder()
-                .setAudioAttributes(audioAttributes())
-                .setAudioFormat(monoFormat())
-                .setBufferSizeInBytes(samples * 2)
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build()
-            track.write(buf, 0, buf.size)
-            track.play()
-            Thread.sleep(500)
-            track.stop()
-            track.release()
-        }, "igniterra-open").also { it.isDaemon = true; it.start() }
-    }
-
-    actual fun unlockSecret() {
-        Thread({
-            val samples = (SAMPLE_RATE * 0.6).toInt()
-            val buf     = ShortArray(samples)
-            for (i in buf.indices) {
-                val t    = i.toDouble() / SAMPLE_RATE
-                val freq = if (t < 0.3) 110.0 + (440.0 - 110.0) * (t / 0.3) else 440.0
-                val env  = if (t < 0.3) t / 0.3 else kotlin.math.exp(-4.0 * (t - 0.3))
-                val tone = kotlin.math.sin(2.0 * kotlin.math.PI * freq * t) * env * 0.7
-                val noise = (Random.nextDouble() * 2.0 - 1.0) * kotlin.math.exp(-10.0 * t) * 0.15
-                buf[i] = ((tone + noise) * Short.MAX_VALUE).toInt()
-                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-            }
-            val track = AudioTrack.Builder()
-                .setAudioAttributes(audioAttributes())
-                .setAudioFormat(monoFormat())
-                .setBufferSizeInBytes(samples * 2)
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build()
-            track.write(buf, 0, buf.size)
-            track.play()
-            Thread.sleep(700)
-            track.stop()
-            track.release()
-        }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
-    }
-
     @Volatile private var musicRunning = false
 
     private val melody = floatArrayOf(
@@ -202,7 +206,7 @@ actual object CrackleSound {
                     val env = if (i < noteSamples * 0.05) i / (noteSamples * 0.05) else 1.0
                     buf[i] = if (freq > 0f) {
                         val vibrato = 1.0 + 0.005 * kotlin.math.sin(2.0 * kotlin.math.PI * 5.0 * t)
-                        (kotlin.math.sin(2.0 * kotlin.math.PI * freq * vibrato * t) * env * 0.25 * Short.MAX_VALUE).toInt().toShort()
+                        (kotlin.math.sin(2.0 * kotlin.math.PI * freq * vibrato * t) * env * 0.25 * globalVolume * Short.MAX_VALUE).toInt().toShort()
                     } else 0
                 }
                 track.write(buf, 0, buf.size)
