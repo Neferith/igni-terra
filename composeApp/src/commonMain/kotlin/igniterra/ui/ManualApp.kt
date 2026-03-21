@@ -93,6 +93,8 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     var drawerOpen     by remember { mutableStateOf(false) }
     var secretUnlocked by remember { mutableStateOf(false) }
     var emblemClicks   by remember { mutableStateOf(0) }
+    var snakeVisible   by remember { mutableStateOf(false) }
+    var badgeClicks    by remember { mutableStateOf(0) }
     val (shakeX, shakeY) = glitch.contentShake
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -121,6 +123,14 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                                 CrackleSound.unlockSecret()
                             }
                         }
+                    },
+                    onBadgeClick = {
+                        badgeClicks++
+                        if (badgeClicks >= 5) {
+                            snakeVisible = true
+                            badgeClicks = 0
+                            CrackleSound.click()
+                        }
                     }
                 )
             } else {
@@ -132,7 +142,15 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     ManualSidebar(
                         selected        = selected,
                         secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
-                        onSelect        = { selected = it }
+                        onSelect        = { selected = it },
+                        onBadgeClick = {
+                            badgeClicks++
+                            if (badgeClicks >= 5) {
+                                snakeVisible = true
+                                badgeClicks = 0
+                                CrackleSound.click()
+                            }
+                        }
                     )
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
                     ManualContent(
@@ -156,6 +174,9 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
             }
             GlitchOverlay(glitch)
         }
+        if (snakeVisible) {
+            SnakeOverlay(onDismiss = { snakeVisible = false; badgeClicks = 0 })
+        }
     }
 }
 
@@ -172,6 +193,7 @@ private fun PortraitLayout(
     onToggle       : () -> Unit,
     onDismiss      : () -> Unit,
     onEmblemClick  : () -> Unit = {},
+    onBadgeClick: () -> Unit = {},
 ) {
     val drawerWidth = 220.dp
     val offsetX by animateDpAsState(
@@ -185,7 +207,7 @@ private fun PortraitLayout(
         Box(Modifier.fillMaxSize().offset(shakeX.dp, shakeY.dp)) {
             Column(Modifier.fillMaxSize()) {
                 // Header mobile avec bouton menu
-                PortraitHeader(selected, onToggle)
+                PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
                     ManualContent(selected, Modifier.fillMaxSize(), recipient, onEmblemClick = onEmblemClick)
                 }
@@ -213,7 +235,8 @@ private fun PortraitLayout(
 }
 
 @Composable
-private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit) {
+private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
+                           onBadgeClick  : () -> Unit = {},) {
     Row(
         Modifier.fillMaxWidth().background(Panel)
             .border(BorderStroke(1.dp, Bdr))
@@ -247,6 +270,7 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit) {
         Spacer(Modifier.weight(1f))
         Box(
             Modifier.border(1.dp, GoldDk, RoundedCornerShape(2.dp))
+                .clickable { onBadgeClick() }
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(AppStrings.Header.badge.uppercase(), fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = Gold)
@@ -259,7 +283,8 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit) {
 private fun ManualSidebar(
     selected       : ManualSection,
     onSelect       : (ManualSection) -> Unit,
-    secretUnlocked : Boolean = false
+    secretUnlocked : Boolean = false,
+    onBadgeClick  : () -> Unit = {},
 ) {
     Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
         Column(Modifier.padding(18.dp)) {
@@ -289,6 +314,7 @@ private fun ManualSidebar(
             Box(
                 Modifier
                     .border(1.dp, GoldDk, RoundedCornerShape(2.dp))
+                    .clickable { onBadgeClick() }
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
@@ -331,13 +357,14 @@ private fun ManualContent(
     modifier      : Modifier,
     recipient     : AppStrings.Recipient? = null,
     emblemClicks  : Int = 0,
-    onEmblemClick : () -> Unit = {}
+    onEmblemClick : () -> Unit = {},
+    onBadgeClick  : () -> Unit = {}
 ) {
     val scroll = rememberScrollState()
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
             when (section) {
-                ManualSection.COVER      -> CoverSection(recipient, onEmblemClick)
+                ManualSection.COVER      -> CoverSection(recipient, onEmblemClick, onBadgeClick)
                 ManualSection.OVERVIEW   -> OverviewSection()
                 ManualSection.SPECS      -> SpecsSection()
                 ManualSection.COMPONENTS -> ComponentsSection()
@@ -363,7 +390,7 @@ private fun ManualContent(
 
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
-private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick: () -> Unit = {}) {
+private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick: () -> Unit = {}, onBadgeClick: () -> Unit = {}) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
         HexEmblem(Modifier.size(80.dp).clickable { onEmblemClick() })
