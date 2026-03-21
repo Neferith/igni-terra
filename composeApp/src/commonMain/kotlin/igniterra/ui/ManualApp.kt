@@ -14,7 +14,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -38,7 +40,7 @@ private val Gold    = Color(0xFFC8A44A)
 private val GoldDk  = Color(0xFF7A6028)
 private val T1      = Color(0xFFD6EDF6)
 private val T2      = Color(0xFF6EA8C0)
-private val T3      = Color(0xFF365470)
+public val T3      = Color(0xFF365470)
 private val Bdr     = Color(0xFF152640)
 private val Red     = Color(0xFFC84040)
 private val RedBg   = Color(0x14C84040)
@@ -48,7 +50,7 @@ private val GoldBdr = Color(0x40C8A44A)
 private val CFeu    = Color(0xFFC84040)
 private val CTerre  = Color(0xFF8A6030)
 private val CVent   = Color(0xFF38C4C4)
-private val Mono    = FontFamily.Monospace
+public val Mono    = FontFamily.Monospace
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 enum class ManualSection(val num: String, val label: String) {
@@ -277,9 +279,14 @@ private fun ManualContent(section: ManualSection, modifier: Modifier) {
                 Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
                 Text(AppStrings.Footer.classification, fontSize = 9.sp, fontFamily = Mono, color = T3)
             }
+
         }
+        WatermarkOverlay(Modifier.fillMaxSize())
+
     }
 }
+
+
 
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
