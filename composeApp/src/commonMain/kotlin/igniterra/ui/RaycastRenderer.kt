@@ -113,6 +113,9 @@ fun FpsView(
     var camY  by remember { mutableStateOf(game.player.pos.y + 0.5) }
     var angle by remember { mutableStateOf(0.0) }
     val focusRequester = remember { FocusRequester() }
+    val glitch = remember { GlitchEngine() }
+    val scope  = rememberCoroutineScope()
+    LaunchedEffect(Unit) { glitch.startLoop(scope) }
 
     // Sync caméra sur le joueur
     LaunchedEffect(game.player.pos) {
@@ -123,8 +126,7 @@ fun FpsView(
     // Focus auto pour le clavier
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    // Game loop temps réel — ennemis bougent toutes les 600ms sans action joueur
-    val scope = rememberCoroutineScope()
+
     LaunchedEffect(game.alive, game.started) {
         if (!game.alive || !game.started) return@LaunchedEffect
         while (game.alive && game.started) {
@@ -142,7 +144,7 @@ fun FpsView(
         }
     }
 
-    // Sprites — recalculés à chaque recomposition (alive/picked changent)
+    // Sprites — recalculés à chaque recomposition
     val sprites = buildList {
         game.enemies.forEach { e ->
             if (e.alive) add(Sprite(e.pos.x + 0.5, e.pos.y + 0.5,
@@ -151,6 +153,11 @@ fun FpsView(
         game.items.forEach { i ->
             if (!i.picked) add(Sprite(i.pos.x + 0.5, i.pos.y + 0.5, FItem, i.type.displayChar))
         }
+        // Escalier visible comme sprite
+        for (y in 0 until game.map.height)
+            for (x in 0 until game.map.width)
+                if (game.map.tiles[y][x] == Tile.STAIRS)
+                    add(Sprite(x + 0.5, y + 0.5, FGold, ">"))
     }
 
     Box(
@@ -210,6 +217,8 @@ fun FpsView(
                     sprites = sprites,
                     modifier = Modifier.fillMaxSize()
                 )
+                // Glitch overlay
+                GlitchOverlay(glitch, Modifier.matchParentSize())
                 // Game over / Victoire overlay
                 if (!game.alive || game.won) {
                     Box(

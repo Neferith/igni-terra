@@ -364,14 +364,15 @@ class DungeonGame {
         // Ramassage d'objets sur la nouvelle case
         items.filter { !it.picked && it.pos == gridPos }.forEach { pickItem(it) }
 
-        // Escalier
-        if (map.tile(gridPos) == Tile.STAIRS) {
+        // Escalier — déclenché à chaque passage sur la tuile
+        if (map.tile(gridPos) == Tile.STAIRS && gridPos != oldGrid) {
             if (enemies.any { it.alive && it.type.isBoss }) {
                 log.add("Le boss doit être vaincu !")
             } else {
                 floor++
                 if (floor > 3) { won = true; log.add("Victoire !"); CrackleSound.dungeonVictory() }
-                else { log.add("Niveau $floor..."); generateFloor() }
+                else { log.add("Niveau $floor..."); generateFloor()
+                    return Pair(player.pos.x + 0.5, player.pos.y + 0.5) }
             }
         }
 

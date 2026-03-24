@@ -6,14 +6,18 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
@@ -21,10 +25,17 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
+import igniterra.model.buildHiddenBackMessage
 import igniterra.strings.AppStrings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.compareTo
 import kotlin.math.PI
 import kotlin.math.cos
@@ -109,6 +120,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
             if (isPortrait) {
                 // ── Mode portrait : contenu plein écran + drawer overlay ──────
                 PortraitLayout(
+                    scope = scope,
                     glitch          = glitch,
                     selected        = selected,
                     drawerOpen      = drawerOpen,
@@ -164,6 +176,8 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         modifier   = Modifier.weight(1f).fillMaxHeight(),
                         recipient  = recipient,
                         emblemClicks    = emblemClicks,
+                        glitch = glitch,
+                        scope = scope,
                         onEmblemClick   = {
                             if (recipient.hasSecretAccess) {
                                 emblemClicks++
@@ -199,6 +213,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
 
 @Composable
 private fun PortraitLayout(
+    scope: CoroutineScope,
     glitch         : GlitchEngine,
     selected       : ManualSection,
     drawerOpen     : Boolean,
@@ -226,7 +241,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient, onEmblemClick = onEmblemClick)
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick)
                 }
             }
         }
@@ -444,6 +459,8 @@ private fun ManualContent(
     modifier      : Modifier,
     recipient     : AppStrings.Recipient? = null,
     emblemClicks  : Int = 0,
+    glitch: GlitchEngine,
+    scope: CoroutineScope,
     onEmblemClick : () -> Unit = {},
     onBadgeClick  : () -> Unit = {},
     onDocRefClick  : () -> Unit = {}
@@ -460,7 +477,7 @@ private fun ManualContent(
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
-                ManualSection.SECRET     -> SecretSection()
+                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
             HRule()
@@ -830,13 +847,13 @@ private fun SubHead(num: String, title: String) {
  * Texte de corps. Les placeholders "[À compléter]" s'affichent en italique/dim.
  */
 @Composable
-private fun Prose(text: String) {
+private fun Prose(text: String, color: Color = T2) {
     val isPlaceholder = text.trim().startsWith("[")
     Text(
         text = text,
         fontSize = 12.sp,
         lineHeight = 20.sp,
-        color = if (isPlaceholder) T3 else T2,
+        color = if (isPlaceholder) T3 else color,
         fontStyle = if (isPlaceholder) FontStyle.Italic else FontStyle.Normal,
         modifier = Modifier.padding(bottom = 14.dp).fillMaxWidth()
     )
@@ -996,12 +1013,302 @@ private fun DiagramConnector() {
 }
 
 // ── Section secrète ───────────────────────────────────────────────────────────
+
+
+// ── Séparateur horizontal gravé ───────────────────────────────────────────────
+
 @Composable
-private fun SecretSection() {
+fun EngravedHorizontalDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .drawBehind {
+                drawLine(
+                    color       = Color(0xFF000000),
+                    start       = Offset(0f, size.height / 2f),
+                    end         = Offset(size.width, size.height / 2f),
+                    strokeWidth = 1f,
+                )
+                drawLine(
+                    color       = Color(0x22FFFFFF),
+                    start       = Offset(0f, size.height / 2f + 1f),
+                    end         = Offset(size.width, size.height / 2f + 1f),
+                    strokeWidth = 1f,
+                )
+            },
+    )
+}
+
+// ── Séparateur vertical gravé ─────────────────────────────────────────────────
+
+@Composable
+fun EngravedVerticalDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(4.dp)
+            .drawBehind {
+                drawLine(
+                    color       = Color(0xFF000000),
+                    start       = Offset(size.width / 2f, 0f),
+                    end         = Offset(size.width / 2f, size.height),
+                    strokeWidth = 1f,
+                )
+                drawLine(
+                    color       = Color(0x22FFFFFF),
+                    start       = Offset(size.width / 2f + 1f, 0f),
+                    end         = Offset(size.width / 2f + 1f, size.height),
+                    strokeWidth = 1f,
+                )
+            },
+    )
+}
+
+@Composable
+fun EngravedText(
+    text         : String,
+    fontSize     : TextUnit,
+    modifier     : Modifier = Modifier,
+    textAlign    : TextAlign = TextAlign.Start,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
+    alpha        : Float = 1f,
+) {
+    Text(
+        text          = text,
+        textAlign     = textAlign,
+        fontSize      = fontSize,
+        letterSpacing = letterSpacing,
+        fontFamily    = Mono,
+        color         = TealDk.copy(alpha = alpha),
+        modifier      = modifier,
+    )
+}
+enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
+@Composable
+fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope) {
+
+
+    LaunchedEffect(Unit) {
+
+       //  recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+    }
+
+
+
+    var phase         by remember { mutableStateOf(SecretPhase.ELEANOR) }
+
+    val eleanorText = "Ma chérie si tu savais comme je suis heureuse de t'avoir rencontré. Dans le fond, je crois que j'étais obscurité me voilà lumière. Avec toi, je me sens véritablement complète. Je voudrais pouvoir passer tellement plus de temps avec toi. Tout mon temps. Alors volons toutes les deux, volons loin de ce monde fou. Emportons tout avec nous. Ne reste que notre amour. Attend un peu, après ce message, ce n'est pas encore terminé."
+
+    val decimusText = "J’ai placé une bombe quelque part. Alors, si tu lis ce message, Adrila, garde le sourire et ne fais rien. N'en parle à personne et surtout pas à ton petit robot de compagnie, Eleanor, sinon je fais tout exploser. Fais un grand sourire dérangeant à tous tes petits compagnons et jouons. Je dispose de tout le temps nécessaire, mais ce n’est pas le cas pour toi, alors sois prudente. Quand vous aurez fini votre entrainement au lance-flamme, tu pourras t'atteler à déchiffrer mon message."
+
+    var displayedText by remember { mutableStateOf("") }
+    var revealed      by remember { mutableStateOf(false) }
+    var loaderProgress by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+
+        // ── Eleanor ───────────────────────────────────────────────────────────
+        phase = SecretPhase.ELEANOR
+        val eleanorDelay = 12000L / eleanorText.length
+        for (i in eleanorText.indices) {
+            displayedText = eleanorText.substring(0, i + 1)
+            delay(eleanorDelay)
+        }
+
+        // ── Glitches ──────────────────────────────────────────────────────────
+        phase = SecretPhase.GLITCH
+        displayedText = ""
+        repeat(6) {
+            glitch.triggerNavGlitch(scope)
+            CrackleSound.click()
+            delay(250L)
+        }
+
+        // ── Logo Garlemald ────────────────────────────────────────────────────
+        phase = SecretPhase.LOGO
+        val loaderSteps = 40
+        repeat(loaderSteps) { step ->
+            loaderProgress = step.toFloat() / loaderSteps
+            delay(50L)
+        }
+        loaderProgress = 1f
+        delay(3500L)
+
+        // ── Decimus ───────────────────────────────────────────────────────────
+        phase = SecretPhase.DECIMUS
+        val decimusDelay = 8000L / decimusText.length
+        for (i in decimusText.indices) {
+            displayedText = decimusText.substring(0, i + 1)
+            delay(decimusDelay)
+        }
+        delay(1500L)
+
+        // ── Cipher ────────────────────────────────────────────────────────────
+        repeat(2) { glitch.triggerNavGlitch(scope); delay(200L) }
+        phase = SecretPhase.CIPHER
+        revealed = true
+    }
+
+
+    val message = remember {
+        try {
+            buildHiddenBackMessage()
+        } catch (e: Exception) {
+            println("ERROR in buildHiddenBackMessage: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    if (message == null) {
+        Prose("Erreur de chargement.")
+        return
+    }
+    val scrollState = rememberScrollState()
+
     SectionHead(AppStrings.Secret.num, AppStrings.Secret.title)
     WarningBox("ACCÈS RESTREINT") {
-        Prose("Ce document contient des informations classifiées. Toute divulgation non autorisée est passible de sanctions conformément aux dispositions légales en vigueur.")
+        Prose("Ce document contient des informations classifiées. Toute divulgation non autorisée est passible de sanctions.")
     }
     Spacer(Modifier.height(8.dp))
-    Prose(AppStrings.Secret.body)
+
+    // Texte progressif
+  /*  if (displayedText.isNotEmpty()) {
+        Prose(
+            displayedText,
+            // Couleur différente selon la phase
+            color = if (phase >= 2) Red.copy(alpha = 0.9f) else T2
+        )
+        Spacer(Modifier.height(8.dp))
+    }*/
+   /* when (phase) {
+        SecretPhase.ELEANOR -> {
+            Prose(displayedText, color = T2)
+        }
+        SecretPhase.GLITCH -> {
+            // Rien — juste les glitches visuels
+        }
+        SecretPhase.LOGO -> {
+            Box(
+                Modifier.fillMaxWidth().height(220.dp).background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                GarleanEmblem(
+                    canvasSize     = 160.dp,
+                    loaderDuration = 2000L,
+                    onComplete     = { scope.launch { phase = SecretPhase.DECIMUS } }
+                )
+            }
+        }
+        SecretPhase.DECIMUS -> {
+            Prose(displayedText, color = Red.copy(alpha = 0.9f))
+        }
+        SecretPhase.CIPHER -> {
+            Prose(decimusText, color = Red.copy(alpha = 0.9f))
+            Spacer(Modifier.height(16.dp))
+            // Ton bloc cipher existant
+        }
+    }*/
+
+
+    // Phase ELEANOR — texte tendre, disparaît au glitch
+    if (phase == SecretPhase.ELEANOR && displayedText.isNotEmpty()) {
+        Prose(displayedText, color = T2)
+        Spacer(Modifier.height(16.dp))
+    }
+
+// Phase GLITCH — rien à afficher, juste les effets visuels
+
+// Logo — visible dès LOGO jusqu'à la fin
+    if (phase >= SecretPhase.LOGO) {
+        Box(
+            Modifier.fillMaxWidth().height(220.dp).background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            GarleanEmblem(
+                canvasSize     = 160.dp,
+                loaderDuration = 2000L,
+                onComplete     = { scope.launch {
+                    if (phase == SecretPhase.LOGO) phase = SecretPhase.DECIMUS
+                }}
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+    }
+
+// Texte Décimus — visible dès DECIMUS
+    if (phase >= SecretPhase.DECIMUS && displayedText.isNotEmpty()) {
+        Prose(displayedText, color = Red.copy(alpha = 0.9f))
+        Spacer(Modifier.height(16.dp))
+    }
+
+// Cipher — visible en phase CIPHER
+    if (phase == SecretPhase.CIPHER) {
+     //   Prose(displayedText, color = T2)
+       // Spacer(Modifier.height(16.dp))
+
+        val chunks = message.words.reversed().chunked(12)
+
+        if (revealed) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Card)
+                    .border(1.dp, Bdr)
+                    //.verticalScroll(scrollState)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                chunks.forEachIndexed { chunkIdx, chunk ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        chunk.forEachIndexed { colIdx, codes ->
+                            EngravedCodeColumn(
+                                codes = codes,
+                                modifier = Modifier.widthIn(min = 60.dp)
+                            )
+                            if (colIdx < chunk.size - 1) {
+                                EngravedVerticalDivider()
+                            }
+                        }
+                        repeat(4 - chunk.size) {
+                            Spacer(Modifier.widthIn(min = 60.dp))
+                        }
+                    }
+                    if (chunkIdx < chunks.size - 1) {
+                        EngravedHorizontalDivider()
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Groupes de 4 colonnes par ligne
+
+}
+
+@Composable
+fun EngravedCodeColumn(codes: List<String>, modifier: Modifier = Modifier) {
+    Column(
+        modifier                = modifier.padding(horizontal = 8.dp),
+        verticalArrangement     = Arrangement.spacedBy(6.dp),
+        horizontalAlignment     = Alignment.CenterHorizontally,
+    ) {
+        codes.forEach { code ->
+            EngravedText(
+                text          = code,
+                fontSize      = 11.sp,
+                letterSpacing = 2.sp,
+                textAlign     = TextAlign.Center,
+            )
+        }
+    }
+
+
 }

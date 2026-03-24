@@ -1,5 +1,8 @@
 package igniterra.strings
 
+import androidx.compose.runtime.remember
+import igniterra.model.buildHiddenBackMessage
+
 object AppStrings {
 
     // ── Destinataires ────────────────────────────────────────────────────────────
@@ -30,7 +33,8 @@ object AppStrings {
                     "Mon corps est passion.\n" +
                     "Mais mon cœur reste raison.\n" +
                     "À nous l'avenir.\n\n" +
-                    "— Eleanor Dubrie\n",
+                    "— Eleanor Dubrie\n" +
+            "PS : J'ai un cadeau pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
             hasSecretAccess = true,
             musicFile   = "HomeBeyondTheHorizon.mp3"
         ),
@@ -41,7 +45,7 @@ object AppStrings {
                     "J’espère que notre arme sera bien utilisée. Le défi de créer une telle arme m’excite au plus haut point, mais la seule idée de son usage m’effraie.\n" +
                     "Je crois que je ne suis pas normal…\n" +
                     "— Eleanor Dubrie",
-            hasSecretAccess = true,
+            hasSecretAccess = false,
             musicFile = "TheEwerBrimmeth8bit.mp3"
         ),
         Recipient(
@@ -304,6 +308,6 @@ object AppStrings {
         const val num   = "07"
         const val label = "Classifié"
         const val title = "Données Classifiées"
-        const val body  = "[À compléter — contenu visible uniquement par les destinataires autorisés]"
+        val body  = buildHiddenBackMessage().words
     }
 }
