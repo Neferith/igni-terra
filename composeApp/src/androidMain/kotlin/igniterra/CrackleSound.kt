@@ -3,6 +3,7 @@ package igniterra
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.MediaPlayer
 import kotlin.math.exp
 import kotlin.random.Random
 
@@ -251,5 +252,38 @@ actual object CrackleSound {
             track.write(buf, 0, buf.size); track.play()
             Thread.sleep(600); track.stop(); track.release()
         }, "igniterra-die").also { it.isDaemon = true; it.start() }
+    }
+
+    // ── Context (initialisé depuis MainActivity) ──────────────────────────────
+    // ── Lecture WAV ───────────────────────────────────────────────────────────
+    private var mediaPlayer: MediaPlayer? = null
+
+    actual fun playWav(filename: String, loop: Boolean) {
+        Thread({
+            try {
+                stopWav()
+                val stream = CrackleSound::class.java.classLoader
+                    ?.getResourceAsStream(filename)
+                    ?: return@Thread
+                val tmp = java.io.File.createTempFile("igniterra_audio", null).apply {
+                    deleteOnExit()
+                    outputStream().use { stream.copyTo(it) }
+                }
+                val mp = MediaPlayer().apply {
+                    setDataSource(tmp.absolutePath)
+                    isLooping = loop
+                    setOnCompletionListener { if (!loop) mediaPlayer = null }
+                    prepare()
+                    start()
+                }
+                mediaPlayer = mp
+            } catch (_: Exception) {}
+        }, "igniterra-wav").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun stopWav() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }

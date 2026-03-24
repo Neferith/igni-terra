@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
 import igniterra.strings.AppStrings
+import kotlin.compareTo
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -86,6 +87,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     LaunchedEffect(Unit) {
         glitch.startLoop(scope)
         CrackleSound.openDocument()
+      //  recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
 
 
@@ -96,6 +98,8 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     var emblemClicks   by remember { mutableStateOf(0) }
     var snakeVisible   by remember { mutableStateOf(false) }
     var badgeClicks    by remember { mutableStateOf(0) }
+    var dungeonVisible by remember { mutableStateOf(false) }
+    var docRefClicks   by remember { mutableStateOf(0) }
     val (shakeX, shakeY) = glitch.contentShake
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -144,6 +148,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         selected        = selected,
                         secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
                         onSelect        = { selected = it },
+                        recipient = recipient,
                         onBadgeClick = {
                             badgeClicks++
                             if (badgeClicks >= 5) {
@@ -169,6 +174,14 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                                     CrackleSound.unlockSecret()
                                 }
                             }
+                        },
+                        onDocRefClick = {
+                            docRefClicks++
+                            if (docRefClicks >= 5) {
+                                dungeonVisible = true
+                                docRefClicks = 0
+                                CrackleSound.click()
+                            }
                         }
                     )
                 }
@@ -177,6 +190,9 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
         }
         if (snakeVisible) {
             SnakeOverlay(onDismiss = { snakeVisible = false; badgeClicks = 0 })
+        }
+        if (dungeonVisible) {
+            DungeonOverlay(onDismiss = { dungeonVisible = false; docRefClicks = 0 })
         }
     }
 }
@@ -229,6 +245,7 @@ private fun PortraitLayout(
             ManualSidebar(
                 selected       = selected,
                 onSelect       = onSelect,
+                recipient = recipient,
                 secretUnlocked = secretUnlocked
             )
         }
@@ -284,6 +301,7 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
 private fun ManualSidebar(
     selected       : ManualSection,
     onSelect       : (ManualSection) -> Unit,
+    recipient: AppStrings.Recipient,
     secretUnlocked : Boolean = false,
     onBadgeClick  : () -> Unit = {},
 ) {
@@ -321,21 +339,45 @@ private fun ManualSidebar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
-                Box(
-                    Modifier
-                        .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
-                        .clickable {
-                            muted = !muted
-                            CrackleSound.setVolume(if (muted) 0f else volume)
-                            CrackleSound.click()
-                        }
-                        .padding(horizontal = 6.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        if (muted) "MUET" else "ON",
-                        fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
-                        color = if (muted) Red.copy(alpha = 0.5f) else TealDk
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Bouton Play/Stop musique
+                    var musicPlaying by remember { mutableStateOf(false) }
+                    Box(
+                        Modifier
+                            .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
+                            .clickable {
+                                CrackleSound.click()
+                                if (musicPlaying) {
+                                    CrackleSound.stopWav()
+                                } else {
+                                    recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+                                }
+                                musicPlaying = !musicPlaying
+                            }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            if (musicPlaying) "STOP" else "PLAY",
+                            fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
+                            color = if (musicPlaying) Teal else T3
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
+                            .clickable {
+                                muted = !muted
+                                CrackleSound.setVolume(if (muted) 0f else volume)
+                                CrackleSound.click()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            if (muted) "MUET" else "ON",
+                            fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
+                            color = if (muted) Red.copy(alpha = 0.5f) else TealDk
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(4.dp))
@@ -403,7 +445,8 @@ private fun ManualContent(
     recipient     : AppStrings.Recipient? = null,
     emblemClicks  : Int = 0,
     onEmblemClick : () -> Unit = {},
-    onBadgeClick  : () -> Unit = {}
+    onBadgeClick  : () -> Unit = {},
+    onDocRefClick  : () -> Unit = {}
 ) {
     val scroll = rememberScrollState()
     LaunchedEffect(section) { scroll.scrollTo(0) }
@@ -423,7 +466,12 @@ private fun ManualContent(
             HRule()
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(AppStrings.Footer.docRef, fontSize = 9.sp, fontFamily = Mono, color = T3)
+                Text(
+                    AppStrings.Footer.docRef, fontSize = 9.sp, fontFamily = Mono, color = T3,
+                    modifier = Modifier.clickable {
+                       onDocRefClick()
+                    }
+                )
                 Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
                 Text(AppStrings.Footer.classification, fontSize = 9.sp, fontFamily = Mono, color = T3)
             }

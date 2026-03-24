@@ -39,6 +39,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4")
             }
         }
         val wasmJsMain by getting {

@@ -158,6 +158,40 @@ private external fun jsSnakeEat()
 }""")
 private external fun jsSnakeDie()
 
+@JsFun("""(filename, loop) => {
+    try {
+        if (!window._igniterra_ctx) return;
+        const ctx = window._igniterra_ctx;
+        const out = window._igniterra_gain || ctx.destination;
+        if (window._igniterra_wav_source) {
+            window._igniterra_wav_source.stop();
+            window._igniterra_wav_source = null;
+        }
+        fetch('./composeResources/igniterra.composeapp.generated.resources/files/' + filename)
+            .then(r => r.arrayBuffer())
+            .then(ab => ctx.decodeAudioData(ab))
+            .then(decoded => {
+                const src = ctx.createBufferSource();
+                src.buffer = decoded;
+                src.loop = loop;
+                src.connect(out);
+                src.start();
+                window._igniterra_wav_source = src;
+            }).catch(e => console.warn('playWav error:', e));
+    } catch(e) {}
+}""")
+private external fun jsPlayWav(filename: String, loop: Boolean)
+
+@JsFun("""() => {
+    try {
+        if (window._igniterra_wav_source) {
+            window._igniterra_wav_source.stop();
+            window._igniterra_wav_source = null;
+        }
+    } catch(e) {}
+}""")
+private external fun jsStopWav()
+
 actual object CrackleSound {
     actual fun start()                      {}
     actual fun stop()                       {}
@@ -169,4 +203,7 @@ actual object CrackleSound {
     actual fun setVolume(volume: Float)     = jsSetVolume(volume)
     actual fun snakeEat()                   = jsSnakeEat()
     actual fun snakeDie()                   = jsSnakeDie()
+
+    actual fun playWav(filename: String, loop: Boolean) = jsPlayWav(filename, loop)
+    actual fun stopWav()                        = jsStopWav()
 }

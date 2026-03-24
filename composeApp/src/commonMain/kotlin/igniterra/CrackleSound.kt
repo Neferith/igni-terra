@@ -16,4 +16,7 @@ expect object CrackleSound {
     fun snakeMusicStart()
     fun snakeMusicStop()
     fun setVolume(volume: Float)  // 0.0 = muet, 1.0 = max
+
+    fun playWav(filename: String, loop: Boolean = false)
+    fun stopWav()
 }

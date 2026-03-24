@@ -1,6 +1,7 @@
 package igniterra
 
 import javax.sound.sampled.AudioFormat
+import javax.sound.sampled.Clip
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.SourceDataLine
 import kotlin.math.exp
@@ -76,6 +77,18 @@ actual object CrackleSound {
         line.close()
     }
 
+    // ── Clic de navigation ────────────────────────────────────────────────────
+
+    /**
+     * Impulsion électrique courte : bruit blanc avec decay exponentiel rapide.
+     * ~12ms, non bloquant (thread daemon dédié).
+     *
+     * CLICK_VOLUME : intensité du clic (0.0 – 1.0)
+     * CLICK_DECAY  : vitesse de decay — plus élevé = plus court
+     */
+    private const val CLICK_VOLUME = 0.55f
+    private const val CLICK_DECAY  = 180.0   // coefficient decay exponentiel
+
     /**
      * Son d'ouverture du document — grave et solennel.
      * Bruit brun court + tonalité basse avec decay lent (~400ms).
@@ -113,49 +126,6 @@ actual object CrackleSound {
         }
     }
 
-    // ── Clic de navigation ────────────────────────────────────────────────────
-
-    /**
-     * Impulsion électrique courte : bruit blanc avec decay exponentiel rapide.
-     * ~12ms, non bloquant (thread daemon dédié).
-     *
-     * CLICK_VOLUME : intensité du clic (0.0 – 1.0)
-     * CLICK_DECAY  : vitesse de decay — plus élevé = plus court
-     */
-    private const val CLICK_VOLUME = 0.55f
-    private const val CLICK_DECAY  = 180.0   // coefficient decay exponentiel
-
-    actual fun click() {
-        Thread({
-            try {
-                val format   = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
-                val line     = AudioSystem.getSourceDataLine(format)
-                val samples  = (SAMPLE_RATE * 0.012f).toInt()   // 12ms
-                val buf      = ByteArray(samples * 2)
-
-                line.open(format, buf.size)
-                line.start()
-
-                for (i in 0 until samples) {
-                    val t      = i.toDouble() / SAMPLE_RATE
-                    val env    = exp(-CLICK_DECAY * t)
-                    val noise  = Random.nextDouble() * 2.0 - 1.0
-                    val sample = (noise * env * CLICK_VOLUME * globalVolume * Short.MAX_VALUE).toInt()
-                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-                    buf[i * 2]     = (sample.toInt() and 0xFF).toByte()
-                    buf[i * 2 + 1] = (sample.toInt() shr 8).toByte()
-                }
-
-                line.write(buf, 0, buf.size)
-                line.drain()
-                line.close()
-            } catch (_: Exception) {}
-        }, "igniterra-click").also {
-            it.isDaemon = true
-            it.start()
-        }
-    }
-
     /**
      * Son de déverrouillage — montée rapide + double tonalité (220Hz puis 440Hz).
      * ~600ms total.
@@ -188,26 +158,71 @@ actual object CrackleSound {
         }, "igniterra-unlock").also { it.isDaemon = true; it.start() }
     }
 
+    actual fun click() {
+        Thread({
+            try {
+                val format   = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val line     = AudioSystem.getSourceDataLine(format)
+                val samples  = (SAMPLE_RATE * 0.012f).toInt()   // 12ms
+                val buf      = ByteArray(samples * 2)
+
+                line.open(format, buf.size)
+                line.start()
+
+                for (i in 0 until samples) {
+                    val t      = i.toDouble() / SAMPLE_RATE
+                    val env    = exp(-CLICK_DECAY * t)
+                    val noise  = Random.nextDouble() * 2.0 - 1.0
+                    val sample = (noise * env * CLICK_VOLUME * globalVolume * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i * 2]     = (sample.toInt() and 0xFF).toByte()
+                    buf[i * 2 + 1] = (sample.toInt() shr 8).toByte()
+                }
+
+                line.write(buf, 0, buf.size)
+                line.drain()
+                line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-click").also {
+            it.isDaemon = true
+            it.start()
+        }
+    }
+
     // ── Sons Snake ────────────────────────────────────────────────────────────
-
-
-    private const val NOTE_DUR  = 0.12f  // durée d'une note en secondes
-    private const val MUSIC_VOL = 0.18f
-
-    @Volatile private var musicRunning = false
 
     // Mélodie 8-bit — notes en Hz
     private val MELODY = floatArrayOf(
         523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f, 523f, 587f, 659f, 587f, 523f, 494f, 440f, 0f, 440f, 523f, 587f, 523f, 440f, 392f, 330f, 0f, 523f, 494f, 440f, 523f, 587f, 523f, 440f, 0f, 494f, 440f, 392f, 330f, 294f, 330f, 262f, 0f, 523f, 494f, 440f, 392f, 330f, 392f, 440f, 0f, 392f, 330f, 294f, 330f, 392f, 440f, 392f, 0f, 349f, 392f, 440f, 523f, 440f, 392f, 349f, 0f, 392f, 440f, 494f, 440f, 392f, 330f, 294f, 0f
     )
+    private const val NOTE_DUR  = 0.12f  // durée d'une note en secondes
+    private const val MUSIC_VOL = 0.18f
 
-    actual fun setVolume(volume: Float) { globalVolume = volume.coerceIn(0f, 1f) }
+    @Volatile private var musicRunning = false
+
+    actual fun setVolume(volume: Float) {
+        globalVolume = volume.coerceIn(0f, 1f)
+        applyVolumeToClip(wavClip)
+    }
+
+    private fun applyVolumeToClip(clip: Clip?) {
+        clip ?: return
+        try {
+            val ctrl = clip.getControl(javax.sound.sampled.FloatControl.Type.MASTER_GAIN)
+                    as? javax.sound.sampled.FloatControl ?: return
+            // Convertit 0..1 en dB (min ~-80dB, max 0dB)
+            val dB = if (globalVolume <= 0f) ctrl.minimum
+            else (20f * kotlin.math.log10(globalVolume)).coerceIn(ctrl.minimum, ctrl.maximum)
+            ctrl.value = dB
+        } catch (_: Exception) {}
+    }
 
     actual fun snakeMusicStart() {
         if (musicRunning) return
         musicRunning = true
         Thread({
             try {
+                stopWav()
                 val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
                 val line   = AudioSystem.getSourceDataLine(format)
                 val noteSamples = (SAMPLE_RATE * NOTE_DUR).toInt()
@@ -239,7 +254,12 @@ actual object CrackleSound {
         }, "igniterra-snake-music").also { it.isDaemon = true; it.start() }
     }
 
-    actual fun snakeMusicStop() { musicRunning = false }
+    actual fun snakeMusicStop() {
+        wavClip?.stop()
+        wavClip?.close()
+        wavClip = null
+        musicRunning = false
+    }
 
     actual fun snakeEat() {
         Thread({
@@ -290,5 +310,51 @@ actual object CrackleSound {
                 line.close()
             } catch (_: Exception) {}
         }, "igniterra-die").also { it.isDaemon = true; it.start() }
+    }
+
+    // ── Lecture WAV ───────────────────────────────────────────────────────────
+    private var wavClip: Clip? = null
+
+    actual fun playWav(filename: String, loop: Boolean) {
+        Thread({
+            try {
+                Class.forName("javazoom.spi.mpeg.sampled.file.MpegAudioFileReader")
+                stopWav()
+                val fullPath = if (filename.contains("/")) filename
+                else "composeResources/igniterra.composeapp.generated.resources/files/$filename"
+                val stream = Thread.currentThread().contextClassLoader
+                    ?.getResourceAsStream(fullPath)
+                    ?: CrackleSound::class.java.classLoader
+                        ?.getResourceAsStream(fullPath)
+                    ?: return@Thread
+                val baseAis = AudioSystem.getAudioInputStream(stream.buffered())
+                val pcmFormat = AudioFormat(
+                    AudioFormat.Encoding.PCM_SIGNED,
+                    baseAis.format.sampleRate,
+                    16,
+                    baseAis.format.channels,
+                    baseAis.format.channels * 2,
+                    baseAis.format.sampleRate,
+                    false
+                )
+                val pcmAis = AudioSystem.getAudioInputStream(pcmFormat, baseAis)
+                val clip   = AudioSystem.getClip()
+                clip.open(pcmAis)
+                applyVolumeToClip(clip)
+                clip.addLineListener { e ->
+                    if (e.type == javax.sound.sampled.LineEvent.Type.STOP && !loop)
+                        wavClip = null
+                }
+                wavClip = clip
+                if (loop) clip.loop(Clip.LOOP_CONTINUOUSLY) else clip.start()
+            } catch (e: Exception) { e.printStackTrace() }
+        }, "igniterra-wav").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun stopWav() {
+        wavClip?.stop()
+        wavClip?.close()
+        wavClip = null
+        musicRunning
     }
 }

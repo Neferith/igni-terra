@@ -8,7 +8,8 @@ object AppStrings {
         val password    : String,
         val note        : String,
 
-        val hasSecretAccess: Boolean = false
+        val hasSecretAccess: Boolean = false,
+        val musicFile      : String? = null  // null = pas de musique
     )
 
     val recipients = listOf(
@@ -18,7 +19,8 @@ object AppStrings {
             note        = "Lothaire,\n" +
                     "Déjà j’espère que tu vas bien. Ne pense pas que ta disparition ne m’a pas inquiété, mais, quelles que soient les raisons, je n’ai aucun doute sur tes convictions et ta volonté. Tu as la capacité de te sortir des pires situations.\n" +
                     "Maintenant, pour ce qui est de l’Igni Terra, je te prie d’en faire un usage modéré. Avec Damian, nous l’avons pensé comme un outil servant à calciner le mal, mais il peut être à double tranchant. Une arme reste une arme. Plus elle est puissante, plus elle doit être utilisée avec parcimonie.\n" +
-                    "— Eleanor Dubrie"
+                    "— Eleanor Dubrie",
+            musicFile = "ishgardAnthem8bits.mp3"
         ),
         Recipient(
             displayName = "Adrila — Officière de la Nouvelle Lune",
@@ -29,7 +31,8 @@ object AppStrings {
                     "Mais mon cœur reste raison.\n" +
                     "À nous l'avenir.\n\n" +
                     "— Eleanor Dubrie\n",
-            hasSecretAccess = true
+            hasSecretAccess = true,
+            musicFile   = "HomeBeyondTheHorizon.mp3"
         ),
         Recipient(
             displayName = "Damian — Ingénieur de la Nouvelle Lune",
@@ -38,7 +41,8 @@ object AppStrings {
                     "J’espère que notre arme sera bien utilisée. Le défi de créer une telle arme m’excite au plus haut point, mais la seule idée de son usage m’effraie.\n" +
                     "Je crois que je ne suis pas normal…\n" +
                     "— Eleanor Dubrie",
-            hasSecretAccess = true
+            hasSecretAccess = true,
+            musicFile = "TheEwerBrimmeth8bit.mp3"
         ),
         Recipient(
             displayName = "Alyx — Occultiste",
