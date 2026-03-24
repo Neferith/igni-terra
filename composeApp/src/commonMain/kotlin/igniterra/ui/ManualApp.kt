@@ -40,6 +40,7 @@ import kotlin.compareTo
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 val Bg      = Color(0xFF07101E)
@@ -1118,13 +1119,29 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
         }
 
         // ── Glitches ──────────────────────────────────────────────────────────
-        phase = SecretPhase.GLITCH
+       /* phase = SecretPhase.GLITCH
         displayedText = ""
         repeat(6) {
             glitch.triggerNavGlitch(scope)
             CrackleSound.click()
             delay(250L)
+        }*/
+        // Phase GLITCH
+        phase = SecretPhase.GLITCH
+        displayedText = ""
+        var glitchTick = 0
+        repeat(6) {
+            glitch.triggerNavGlitch(scope)
+            CrackleSound.click()
+            // Texte aléatoire qui change à chaque glitch
+            displayedText = buildString {
+                repeat(Random.nextInt(20, 60)) {
+                    append("ABCDEFGHIJKLMNOPQRSTUVWXYZαβγδΩΨΦ∆∇∑∏#@!%&*<>".random())
+                }
+            }
+            delay(250L)
         }
+        displayedText = ""
 
         // ── Logo Garlemald ────────────────────────────────────────────────────
         phase = SecretPhase.LOGO
@@ -1220,6 +1237,18 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
     }
 
 // Phase GLITCH — rien à afficher, juste les effets visuels
+    if (phase == SecretPhase.GLITCH && displayedText.isNotEmpty()) {
+        Text(
+            displayedText,
+            fontSize      = 11.sp,
+            fontFamily    = Mono,
+            color         = Red.copy(alpha = 0.7f),
+            letterSpacing = 3.sp,
+            lineHeight    = 16.sp,
+            modifier      = Modifier.padding(horizontal = 16.dp)
+        )
+        Spacer(Modifier.height(16.dp))
+    }
 
 // Logo — visible dès LOGO jusqu'à la fin
     if (phase >= SecretPhase.LOGO) {
