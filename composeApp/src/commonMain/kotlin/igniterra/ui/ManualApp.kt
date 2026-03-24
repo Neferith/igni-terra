@@ -207,7 +207,10 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
             SnakeOverlay(onDismiss = { snakeVisible = false; badgeClicks = 0 })
         }
         if (dungeonVisible) {
-            DungeonOverlay(onDismiss = { dungeonVisible = false; docRefClicks = 0 })
+            DungeonOverlay(
+                traducterMode = true,
+                onDismiss = { dungeonVisible = false; docRefClicks = 0 }
+            )
         }
     }
 }
@@ -1130,7 +1133,7 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
         phase = SecretPhase.GLITCH
         displayedText = ""
         var glitchTick = 0
-        repeat(6) {
+        repeat(24) {
             glitch.triggerNavGlitch(scope)
             CrackleSound.click()
             // Texte aléatoire qui change à chaque glitch

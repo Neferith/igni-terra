@@ -37,6 +37,7 @@ enum class ItemType(val displayChar: String, val displayName: String) {
     POTION   ("+", "Potion d'Éther"),
     CRYSTAL  ("*", "Cristal de Foudre"),
     ARMOR    ("^", "Armure Magitek"),
+    MAGITEK_TRADUCTER    ("T", "Traducteur Magitek Cipher"),
 }
 
 data class Enemy(
@@ -125,7 +126,7 @@ class DungeonMap(val width: Int = 40, val height: Int = 22) {
 // ── Moteur de jeu ─────────────────────────────────────────────────────────────
 
 @Stable
-class DungeonGame {
+class DungeonGame(val traducterMode: Boolean) {
 
     var map     by mutableStateOf(DungeonMap())
     var player  by mutableStateOf(PlayerState(DungeonPos(0, 0)))
@@ -181,7 +182,10 @@ class DungeonGame {
         // Objets
         m.rooms.drop(1).forEach { room ->
             if (rng.nextFloat() < 0.4f) {
-                val type = ItemType.values().random(rng)
+                var type = ItemType.values().random(rng)
+                if(!traducterMode && type == ItemType.MAGITEK_TRADUCTER) {
+                    type = ItemType.CRYSTAL
+                }
                 val px = room.x + rng.nextInt(1, room.w - 1)
                 val py = room.y + rng.nextInt(1, room.h - 1)
                 items.add(Item(type, DungeonPos(px, py)))
@@ -301,6 +305,12 @@ class DungeonGame {
                 player = player.copy(def = player.def + 1)
                 log.add("Armure Magitek : +1 DEF !")
                 CrackleSound.dungeonItemPickup()
+            }
+
+            ItemType.MAGITEK_TRADUCTER  -> {
+                player = player.copy(def = player.def + 1)
+                log.add("Adrila a trouvé le traducteur !!!")
+                CrackleSound.dungeonVictory()
             }
         }
     }

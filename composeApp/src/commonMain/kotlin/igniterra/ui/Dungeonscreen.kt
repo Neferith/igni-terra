@@ -46,8 +46,8 @@ private const val VIEW_W = 15
 private const val VIEW_H = 9
 
 @Composable
-fun DungeonOverlay(onDismiss: () -> Unit) {
-    val game = remember { DungeonGame() }
+fun DungeonOverlay(traducterMode: Boolean,onDismiss: () -> Unit) {
+    val game = remember { DungeonGame(traducterMode) }
 
     LaunchedEffect(Unit) { game.newGame() }
 
