@@ -172,13 +172,13 @@ fun FpsView(
                     Key.W, Key.DirectionUp -> {
                         val dx = cos(angle).roundToInt().coerceIn(-1, 1)
                         val dy = sin(angle).roundToInt().coerceIn(-1, 1)
-                        val (nx, ny) = game.fpsMove(camX, camY, dx, dy)
+                        val (nx, ny) = game.fpsMove(camX, camY, dx, dy, {})
                         camX = nx; camY = ny; CrackleSound.click(); true
                     }
                     Key.S, Key.DirectionDown -> {
                         val dx = (-cos(angle)).roundToInt().coerceIn(-1, 1)
                         val dy = (-sin(angle)).roundToInt().coerceIn(-1, 1)
-                        val (nx, ny) = game.fpsMove(camX, camY, dx, dy)
+                        val (nx, ny) = game.fpsMove(camX, camY, dx, dy, {})
                         camX = nx; camY = ny; CrackleSound.click(); true
                     }
                     Key.A, Key.DirectionLeft  -> { angle -= rot; true }
@@ -265,8 +265,8 @@ fun FpsView(
             // Contrôles FPS
             FpsControls(
                 onAttack   = { game.fpsAttack(camX, camY, angle); CrackleSound.dungeonHit() },
-                onForward  = { val dx = cos(angle).roundToInt().coerceIn(-1,1); val dy = sin(angle).roundToInt().coerceIn(-1,1); val (nx,ny) = game.fpsMove(camX, camY, dx, dy); camX = nx; camY = ny; CrackleSound.click() },
-                onBackward = { val dx = (-cos(angle)).roundToInt().coerceIn(-1,1); val dy = (-sin(angle)).roundToInt().coerceIn(-1,1); val (nx,ny) = game.fpsMove(camX, camY, dx, dy); camX = nx; camY = ny; CrackleSound.click() },
+                onForward  = { val dx = cos(angle).roundToInt().coerceIn(-1,1); val dy = sin(angle).roundToInt().coerceIn(-1,1); val (nx,ny) = game.fpsMove(camX, camY, dx, dy, {}); camX = nx; camY = ny; CrackleSound.click() },
+                onBackward = { val dx = (-cos(angle)).roundToInt().coerceIn(-1,1); val dy = (-sin(angle)).roundToInt().coerceIn(-1,1); val (nx,ny) = game.fpsMove(camX, camY, dx, dy, {}); camX = nx; camY = ny; CrackleSound.click() },
                 onLeft     = { angle -= 0.12; CrackleSound.click() },
                 onRight    = { angle += 0.12; CrackleSound.click() }
             )

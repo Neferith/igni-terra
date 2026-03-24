@@ -46,8 +46,8 @@ private const val VIEW_W = 15
 private const val VIEW_H = 9
 
 @Composable
-fun DungeonOverlay(traducterMode: Boolean,onDismiss: () -> Unit) {
-    val game = remember { DungeonGame(traducterMode) }
+fun DungeonOverlay(traducterMode: Boolean, onFoundTraducter: () -> Unit,onDismiss: () -> Unit) {
+    val game = remember { DungeonGame(traducterMode, onFoundTraducter) }
 
     LaunchedEffect(Unit) { game.newGame() }
 
@@ -107,7 +107,7 @@ fun DungeonOverlay(traducterMode: Boolean,onDismiss: () -> Unit) {
             Box(Modifier.fillMaxWidth().height(1.dp).background(DBdr))
 
             // D-pad + statut
-            DungeonFooter(game)
+            DungeonFooter(game, traducterMode, onFoundTraducter)
         }
     }
 }
@@ -248,7 +248,7 @@ private fun LogPanel(game: DungeonGame) {
 
 // ── Footer : D-pad ────────────────────────────────────────────────────────────
 @Composable
-private fun DungeonFooter(game: DungeonGame) {
+private fun DungeonFooter(game: DungeonGame, traducterMode: Boolean, onFoundTraducter: () -> Unit) {
 
     // Boucle démo
     LaunchedEffect(game.demoMode, game.alive, game.started) {
@@ -274,7 +274,7 @@ private fun DungeonFooter(game: DungeonGame) {
         // D-pad
         DungeonDPad(enabled = game.alive && !game.won) { dx, dy ->
             CrackleSound.click()
-            game.move(dx, dy)
+            game.move(dx, dy, onFoundTraducter)
         }
 
         // Légende
@@ -295,6 +295,9 @@ private fun DungeonFooter(game: DungeonGame) {
             LegendRow("X", colorBoss, "Boss")
             LegendRow("+*/^", colorItem, "Objets")
             LegendRow(">", colorStairs, "Escalier")
+            if(traducterMode) {
+                LegendRow("T", colorItem, "Traducteur Magitek Cipher")
+            }
         }
     }
 }

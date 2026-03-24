@@ -73,7 +73,9 @@ enum class ManualSection(val num: String, val label: String) {
     FIRE_MODES("04", "Modes de tir"),
     SAFETY("05", "Sécurité"),
     LEGAL("06", "Dispositions légales"),
-    SECRET("07", "Classifié")
+    SECRET("07", "Classifié"),
+
+    TRADUCTER("08", "Traducteur Magitek Cipher")
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
@@ -107,6 +109,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }
     var drawerOpen     by remember { mutableStateOf(false) }
     var secretUnlocked by remember { mutableStateOf(false) }
+    var traducterUnlocked by remember { mutableStateOf(false) }
     var emblemClicks   by remember { mutableStateOf(0) }
     var snakeVisible   by remember { mutableStateOf(false) }
     var badgeClicks    by remember { mutableStateOf(0) }
@@ -132,6 +135,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     onSelect        = { selected = it; drawerOpen = false },
                     onToggle        = { drawerOpen = !drawerOpen },
                     onDismiss       = { drawerOpen = false },
+                    traducterUnlocked = traducterUnlocked,
                     onEmblemClick   = {
                         if (recipient.hasSecretAccess) {
                             emblemClicks++
@@ -162,6 +166,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
                         onSelect        = { selected = it },
                         recipient = recipient,
+                        traducterUnlocked = traducterUnlocked,
                         onBadgeClick = {
                             badgeClicks++
                             if (badgeClicks >= 5) {
@@ -208,7 +213,10 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
         }
         if (dungeonVisible) {
             DungeonOverlay(
-                traducterMode = true,
+                traducterMode = secretUnlocked,
+                onFoundTraducter = {
+                    traducterUnlocked = true
+                },
                 onDismiss = { dungeonVisible = false; docRefClicks = 0 }
             )
         }
@@ -225,6 +233,7 @@ private fun PortraitLayout(
     shakeY         : Float,
     recipient      : AppStrings.Recipient,
     secretUnlocked : Boolean = false,
+    traducterUnlocked: Boolean,
     onSelect       : (ManualSection) -> Unit,
     onToggle       : () -> Unit,
     onDismiss      : () -> Unit,
@@ -265,6 +274,7 @@ private fun PortraitLayout(
                 selected       = selected,
                 onSelect       = onSelect,
                 recipient = recipient,
+                traducterUnlocked = traducterUnlocked,
                 secretUnlocked = secretUnlocked
             )
         }
@@ -322,6 +332,7 @@ private fun ManualSidebar(
     onSelect       : (ManualSection) -> Unit,
     recipient: AppStrings.Recipient,
     secretUnlocked : Boolean = false,
+    traducterUnlocked : Boolean,
     onBadgeClick  : () -> Unit = {},
 ) {
     var volume by remember { mutableStateOf(1f) }
@@ -347,6 +358,12 @@ private fun ManualSidebar(
             Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
             SideNavItem(ManualSection.SECRET, selected == ManualSection.SECRET, accent = Red) {
                 onSelect(ManualSection.SECRET)
+            }
+        }
+        if(traducterUnlocked) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+            SideNavItem(ManualSection.TRADUCTER, selected == ManualSection.TRADUCTER, accent = Red) {
+                onSelect(ManualSection.TRADUCTER)
             }
         }
         Spacer(Modifier.weight(1f))
@@ -482,6 +499,7 @@ private fun ManualContent(
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
                 ManualSection.SECRET     -> SecretSection(recipient,glitch, scope)
+                ManualSection.TRADUCTER ->  SecretSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
             HRule()

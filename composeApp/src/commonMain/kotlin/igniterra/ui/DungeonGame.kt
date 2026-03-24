@@ -126,7 +126,7 @@ class DungeonMap(val width: Int = 40, val height: Int = 22) {
 // ── Moteur de jeu ─────────────────────────────────────────────────────────────
 
 @Stable
-class DungeonGame(val traducterMode: Boolean) {
+class DungeonGame(val traducterMode: Boolean, onFoundTraducter: () -> Unit) {
 
     var map     by mutableStateOf(DungeonMap())
     var player  by mutableStateOf(PlayerState(DungeonPos(0, 0)))
@@ -197,7 +197,7 @@ class DungeonGame(val traducterMode: Boolean) {
 
     // ── Mouvement ─────────────────────────────────────────────────────────────
 
-    fun move(dx: Int, dy: Int) {
+    fun move(dx: Int, dy: Int, onFoundTraducter: () -> Unit) {
         if (!alive || !started) return
         val next = DungeonPos(player.pos.x + dx, player.pos.y + dy)
         if (!map.isWalkable(next)) return
@@ -209,7 +209,7 @@ class DungeonGame(val traducterMode: Boolean) {
         player = player.copy(pos = next)
 
         // Ramasser objet
-        items.filter { !it.picked && it.pos == next }.forEach { pickItem(it) }
+        items.filter { !it.picked && it.pos == next }.forEach { pickItem(it, onFoundTraducter) }
 
         // Escalier
         if (map.tile(next) == Tile.STAIRS) {
@@ -287,7 +287,7 @@ class DungeonGame(val traducterMode: Boolean) {
         }
     }
 
-    private fun pickItem(item: Item) {
+    private fun pickItem(item: Item, onFoundTraducter: () -> Unit) {
         item.picked = true
         when (item.type) {
             ItemType.POTION  -> {
@@ -311,6 +311,7 @@ class DungeonGame(val traducterMode: Boolean) {
                 player = player.copy(def = player.def + 1)
                 log.add("Adrila a trouvé le traducteur !!!")
                 CrackleSound.dungeonVictory()
+                onFoundTraducter()
             }
         }
     }
@@ -347,7 +348,7 @@ class DungeonGame(val traducterMode: Boolean) {
      * Déplacement FPS — basé sur la position flottante de la caméra.
      * camX/camY sont les coordonnées réelles, dx/dy le delta en cases.
      */
-    fun fpsMove(camX: Double, camY: Double, dx: Int, dy: Int): Pair<Double, Double> {
+    fun fpsMove(camX: Double, camY: Double, dx: Int, dy: Int, onFoundTraducter: () -> Unit): Pair<Double, Double> {
         if (!alive || !started) return Pair(camX, camY)
 
         val speed = 0.15
@@ -372,7 +373,7 @@ class DungeonGame(val traducterMode: Boolean) {
         player = player.copy(pos = gridPos)
 
         // Ramassage d'objets sur la nouvelle case
-        items.filter { !it.picked && it.pos == gridPos }.forEach { pickItem(it) }
+        items.filter { !it.picked && it.pos == gridPos }.forEach { pickItem(it, onFoundTraducter) }
 
         // Escalier — déclenché à chaque passage sur la tuile
         if (map.tile(gridPos) == Tile.STAIRS && gridPos != oldGrid) {
@@ -509,7 +510,7 @@ class DungeonGame(val traducterMode: Boolean) {
         val path = findPath(p, target)
         if (path.isNotEmpty()) {
             val next = path.first()
-            move(next.x - p.x, next.y - p.y)
+            move(next.x - p.x, next.y - p.y, onFoundTraducter = {} )
         }
     }
 
