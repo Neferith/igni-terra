@@ -131,6 +131,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     onToggle        = { drawerOpen = !drawerOpen },
                     onDismiss       = { drawerOpen = false },
                     traducterUnlocked = traducterUnlocked,
+                    onEnableDungeon = { dungeonVisible = true },
                     onEmblemClick   = {
                         if (recipient.hasSecretAccess) {
                             emblemClicks++
@@ -179,6 +180,9 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         emblemClicks    = emblemClicks,
                         glitch = glitch,
                         scope = scope,
+                        onEnableDungeon = {
+                            dungeonVisible = true
+                        },
                         onEmblemClick   = {
                             if (recipient.hasSecretAccess) {
                                 emblemClicks++
@@ -232,6 +236,7 @@ private fun PortraitLayout(
     onSelect       : (ManualSection) -> Unit,
     onToggle       : () -> Unit,
     onDismiss      : () -> Unit,
+    onEnableDungeon: () -> Unit,
     onEmblemClick  : () -> Unit = {},
     onBadgeClick: () -> Unit = {},
 ) {
@@ -249,7 +254,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick)
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick,  onEnableDungeon = onEnableDungeon)
                 }
             }
         }
@@ -478,6 +483,7 @@ private fun ManualContent(
     emblemClicks  : Int = 0,
     glitch: GlitchEngine,
     scope: CoroutineScope,
+    onEnableDungeon: () -> Unit,
     onEmblemClick : () -> Unit = {},
     onBadgeClick  : () -> Unit = {},
     onDocRefClick  : () -> Unit = {}
@@ -494,7 +500,7 @@ private fun ManualContent(
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
-                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope)
+                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope, onEnableDungeon)
                 ManualSection.TRADUCTER ->  TraducterSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
@@ -1104,7 +1110,7 @@ fun EngravedText(
 }
 enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
 @Composable
-fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope) {
+fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope, onEnableDungeon: () -> Unit ) {
 
 
     LaunchedEffect(Unit) {
@@ -1294,8 +1300,33 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
     if (phase == SecretPhase.CIPHER) {
      //   Prose(displayedText, color = T2)
        // Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .border(1.dp, Red.copy(alpha = 0.4f))
+                .clickable {
+                    onEnableDungeon()
+                  /*  val game = DungeonGame()
+                    game.newGame()
+                    dungeonGame  = game
+                    showDungeon  = true*/
+                    CrackleSound.click()
+                }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "Joue avec moi, Adrila.",
+                fontSize      = 10.sp,
+                letterSpacing = 3.sp,
+                fontFamily    = Mono,
+                color         = Red.copy(alpha = 0.8f)
+            )
+        }
+        Spacer(Modifier.height(16.dp))
 
-        val chunks = message.words.reversed().chunked(12)
+        val chunks = message.words.reversed().chunked(4)
 
         if (revealed) {
             Column(
