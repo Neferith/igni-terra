@@ -6,7 +6,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -16,8 +15,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
@@ -28,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
 import igniterra.model.buildHiddenBackMessage
@@ -36,7 +32,6 @@ import igniterra.strings.AppStrings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.compareTo
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -136,6 +131,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     onToggle        = { drawerOpen = !drawerOpen },
                     onDismiss       = { drawerOpen = false },
                     traducterUnlocked = traducterUnlocked,
+                    onEnableDungeon = { dungeonVisible = true },
                     onEmblemClick   = {
                         if (recipient.hasSecretAccess) {
                             emblemClicks++
@@ -184,6 +180,9 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         emblemClicks    = emblemClicks,
                         glitch = glitch,
                         scope = scope,
+                        onEnableDungeon = {
+                            dungeonVisible = true
+                        },
                         onEmblemClick   = {
                             if (recipient.hasSecretAccess) {
                                 emblemClicks++
@@ -237,6 +236,7 @@ private fun PortraitLayout(
     onSelect       : (ManualSection) -> Unit,
     onToggle       : () -> Unit,
     onDismiss      : () -> Unit,
+    onEnableDungeon: () -> Unit,
     onEmblemClick  : () -> Unit = {},
     onBadgeClick: () -> Unit = {},
 ) {
@@ -254,7 +254,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick)
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick,  onEnableDungeon = onEnableDungeon)
                 }
             }
         }
@@ -352,6 +352,7 @@ private fun ManualSidebar(
         HRule()
         ManualSection.entries.forEach { s ->
             if (s == ManualSection.SECRET) return@forEach
+            if (s == ManualSection.TRADUCTER) return@forEach
             SideNavItem(s, s == selected) { onSelect(s) }
         }
         if (secretUnlocked) {
@@ -482,6 +483,7 @@ private fun ManualContent(
     emblemClicks  : Int = 0,
     glitch: GlitchEngine,
     scope: CoroutineScope,
+    onEnableDungeon: () -> Unit,
     onEmblemClick : () -> Unit = {},
     onBadgeClick  : () -> Unit = {},
     onDocRefClick  : () -> Unit = {}
@@ -498,8 +500,8 @@ private fun ManualContent(
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
-                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope)
-                ManualSection.TRADUCTER ->  SecretSection(recipient,glitch, scope)
+                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope, onEnableDungeon)
+                ManualSection.TRADUCTER ->  TraducterSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
             HRule()
@@ -1108,7 +1110,7 @@ fun EngravedText(
 }
 enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
 @Composable
-fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope) {
+fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope, onEnableDungeon: () -> Unit ) {
 
 
     LaunchedEffect(Unit) {
@@ -1298,8 +1300,33 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
     if (phase == SecretPhase.CIPHER) {
      //   Prose(displayedText, color = T2)
        // Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .border(1.dp, Red.copy(alpha = 0.4f))
+                .clickable {
+                    onEnableDungeon()
+                  /*  val game = DungeonGame()
+                    game.newGame()
+                    dungeonGame  = game
+                    showDungeon  = true*/
+                    CrackleSound.click()
+                }
+                .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "Joue avec moi, Adrila.",
+                fontSize      = 10.sp,
+                letterSpacing = 3.sp,
+                fontFamily    = Mono,
+                color         = Red.copy(alpha = 0.8f)
+            )
+        }
+        Spacer(Modifier.height(16.dp))
 
-        val chunks = message.words.reversed().chunked(12)
+        val chunks = message.words.reversed().chunked(4)
 
         if (revealed) {
             Column(

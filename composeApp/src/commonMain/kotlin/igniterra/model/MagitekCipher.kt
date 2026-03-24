@@ -80,6 +80,13 @@ object MagitekCipher {
     fun referenceTable(): String = (0..47).joinToString("\n") { i ->
         "${ButtonLabelEncoder.encode(i)} = ${ALPHABET[i]}"
     }
+
+    /** Encode une liste d'indices en codes puis décode en texte */
+    fun fromIndices(indices: List<Int>): String =
+        indices.mapNotNull { ALPHABET.getOrNull(it) }.joinToString("")
+
+    /** Récupère le caractère correspondant à un index */
+    fun charAt(index: Int): String = ALPHABET.getOrNull(index) ?: ""
 }
 
 // ── Message caché — à configurer ─────────────────────────────────────────────

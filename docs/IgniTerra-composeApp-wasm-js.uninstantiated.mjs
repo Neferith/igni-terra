@@ -4581,6 +4581,67 @@ export async function instantiate(imports={}, runInitializer=true) {
                 src.buffer = buf; src.connect(out); src.start();
             } catch(e) {}
         },
+        'igniterra.jsPlayWav' : (filename, loop) => {
+            try {
+                if (!window._igniterra_ctx) return;
+                const ctx = window._igniterra_ctx;
+                const out = window._igniterra_gain || ctx.destination;
+                if (window._igniterra_wav_source) {
+                    window._igniterra_wav_source.stop();
+                    window._igniterra_wav_source = null;
+                }
+                fetch('./composeResources/igniterra.composeapp.generated.resources/files/' + filename)
+                    .then(r => r.arrayBuffer())
+                    .then(ab => ctx.decodeAudioData(ab))
+                    .then(decoded => {
+                        const src = ctx.createBufferSource();
+                        src.buffer = decoded;
+                        src.loop = loop;
+                        src.connect(out);
+                        src.start();
+                        window._igniterra_wav_source = src;
+                    }).catch(e => console.warn('playWav error:', e));
+            } catch(e) {}
+        },
+        'igniterra.jsStopWav' : () => {
+            try {
+                if (window._igniterra_wav_source) {
+                    window._igniterra_wav_source.stop();
+                    window._igniterra_wav_source = null;
+                }
+            } catch(e) {}
+        },
+        'igniterra.jsPlayTones' : (notes, vol, wave) => {
+            try {
+                if (!window._igniterra_ctx) return;
+                const ctx = window._igniterra_ctx;
+                const out = window._igniterra_gain || ctx.destination;
+                const sr = ctx.sampleRate;
+                let timeOffset = ctx.currentTime + 0.01;
+                for (const [freq, ms] of notes) {
+                    const dur = ms / 1000;
+                    const samples = Math.floor(sr * dur);
+                    const buf = ctx.createBuffer(1, samples, sr);
+                    const data = buf.getChannelData(0);
+                    for (let i = 0; i < samples; i++) {
+                        const t = i / sr;
+                        data[i] = wave === 'sine'
+                            ? Math.sin(2 * Math.PI * freq * t) * vol
+                            : ((freq * t) % 1 < 0.5 ? 1 : -1) * vol;
+                    }
+                    const src = ctx.createBufferSource();
+                    src.buffer = buf; src.connect(out);
+                    src.start(timeOffset);
+                    timeOffset += dur;
+                }
+            } catch(e) {}
+        },
+        'igniterra.jsEmptyArray' : (notes, vol, wave) => {
+            const arr = [];
+            return arr;
+        },
+        'igniterra.jsNote' : (freq, ms) => [freq, ms],
+        'igniterra.jsPush' : (arr, note) => { arr.push(note); return arr; },
         'igniterra.windowInnerWidth' : () => window.innerWidth
     }
     

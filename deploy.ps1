@@ -48,6 +48,13 @@ if (Test-Path $srcRes) {
 
 }
 
+$srcFiles = "composeApp\build\dist\wasmJs\developmentExecutable\composeResources\igniterra.composeapp.generated.resources\files"
+if (Test-Path $srcFiles) {
+    $filesOut = Join-Path $out "composeResources\igniterra.composeapp.generated.resources\files"
+    New-Item -ItemType Directory -Path $filesOut -Force | Out-Null
+    Copy-Item -Path "$srcFiles\*" -Destination $filesOut -Recurse -Force
+}
+
 
 
 Write-Host "Commit..." -ForegroundColor Cyan
