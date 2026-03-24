@@ -2,6 +2,9 @@ package igniterra.ui
 
 import androidx.compose.runtime.*
 import kotlin.math.abs
+import kotlin.math.hypot
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.max
 import kotlin.math.min
 import igniterra.CrackleSound
@@ -317,6 +320,100 @@ class DungeonGame {
 
     private fun trimLog() {
         while (log.size > 6) log.removeAt(0)
+    }
+
+
+    // ── Tick passif (temps réel FPS) ─────────────────────────────────────────
+    fun passiveEnemyTick() {
+        if (!alive || !started) return
+        enemyTurn()
+        trimLog()
+    }
+
+    // ── Mouvement FPS ─────────────────────────────────────────────────────────
+    // Déplace la caméra flottante ET déclenche les interactions de jeu
+
+    /**
+     * Déplacement FPS — basé sur la position flottante de la caméra.
+     * camX/camY sont les coordonnées réelles, dx/dy le delta en cases.
+     */
+    fun fpsMove(camX: Double, camY: Double, dx: Int, dy: Int): Pair<Double, Double> {
+        if (!alive || !started) return Pair(camX, camY)
+
+        val speed = 0.15
+        val newCamX = camX + dx * speed
+        val newCamY = camY + dy * speed
+        val tileX = newCamX.toInt().coerceIn(0, map.width - 1)
+        val tileY = newCamY.toInt().coerceIn(0, map.height - 1)
+
+        if (map.tiles[tileY][tileX] == Tile.WALL) return Pair(camX, camY)
+
+        // Combat si ennemi sur la case
+        val gridPos = DungeonPos(tileX, tileY)
+        val enemy = enemies.firstOrNull { it.alive && it.pos == gridPos }
+        if (enemy != null) {
+            attack(enemy)
+            enemyTurn(); trimLog()
+            return Pair(camX, camY)
+        }
+
+        // Mise à jour position joueur sur la grille
+        val oldGrid = player.pos
+        player = player.copy(pos = gridPos)
+
+        // Ramassage d'objets sur la nouvelle case
+        items.filter { !it.picked && it.pos == gridPos }.forEach { pickItem(it) }
+
+        // Escalier
+        if (map.tile(gridPos) == Tile.STAIRS) {
+            if (enemies.any { it.alive && it.type.isBoss }) {
+                log.add("Le boss doit être vaincu !")
+            } else {
+                floor++
+                if (floor > 3) { won = true; log.add("Victoire !"); CrackleSound.dungeonVictory() }
+                else { log.add("Niveau $floor..."); generateFloor() }
+            }
+        }
+
+        enemyTurn(); trimLog()
+        return Pair(newCamX, newCamY)
+    }
+
+    fun fpsAttack(camX: Double, camY: Double, angle: Double) {
+        if (!alive || !started) return
+        val dirX = cos(angle)
+        val dirY = sin(angle)
+
+        // Lance un rayon et cherche le PREMIER ennemi touché (pas de mur entre eux)
+        val target = enemies.filter { it.alive }.filter { e ->
+            val dx   = e.pos.x + 0.5 - camX
+            val dy   = e.pos.y + 0.5 - camY
+            val dist = hypot(dx, dy)
+            if (dist > 3.0) return@filter false
+            // Angle très précis — doit être dans les 25°
+            val dot = (dx / dist) * dirX + (dy / dist) * dirY
+            if (dot < 0.9) return@filter false
+            // Vérifie qu'il n'y a pas de mur entre le joueur et l'ennemi
+            var rx = camX; var ry = camY
+            val steps = (dist * 10).toInt()
+            val stepX = dx / steps; val stepY = dy / steps
+            var blocked = false
+            for (s in 0 until steps) {
+                rx += stepX; ry += stepY
+                val tx = rx.toInt().coerceIn(0, map.width - 1)
+                val ty = ry.toInt().coerceIn(0, map.height - 1)
+                if (map.tiles[ty][tx] == Tile.WALL) { blocked = true; break }
+            }
+            !blocked
+        }.minByOrNull { hypot(it.pos.x + 0.5 - camX, it.pos.y + 0.5 - camY) }
+
+        if (target != null) {
+            attack(target)
+        } else {
+            log.add("Rien dans la ligne de mire.")
+            trimLog()
+        }
+        enemyTurn(); trimLog()
     }
 
     // ── Mode démo ─────────────────────────────────────────────────────────────
