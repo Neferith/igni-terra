@@ -6,7 +6,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -16,8 +15,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
@@ -28,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
 import igniterra.model.buildHiddenBackMessage
@@ -36,7 +32,6 @@ import igniterra.strings.AppStrings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.compareTo
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -352,6 +347,7 @@ private fun ManualSidebar(
         HRule()
         ManualSection.entries.forEach { s ->
             if (s == ManualSection.SECRET) return@forEach
+            if (s == ManualSection.TRADUCTER) return@forEach
             SideNavItem(s, s == selected) { onSelect(s) }
         }
         if (secretUnlocked) {
@@ -499,7 +495,7 @@ private fun ManualContent(
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
                 ManualSection.SECRET     -> SecretSection(recipient,glitch, scope)
-                ManualSection.TRADUCTER ->  SecretSection(recipient,glitch, scope)
+                ManualSection.TRADUCTER ->  TraducterSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
             HRule()

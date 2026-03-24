@@ -29,6 +29,10 @@ class GlitchEngine {
     var noiseLines by mutableStateOf<List<Triple<Float, Float, Float>>>(emptyList())
         private set
 
+    /** Tremblement de la grille en dp */
+    var gridShake by mutableStateOf(0f)
+        private set
+
     // ── Boucle automatique ────────────────────────────────────────────────────
 
     fun startLoop(scope: CoroutineScope) {
@@ -47,6 +51,7 @@ class GlitchEngine {
             ::effectFlash,
             ::effectContentShake,
             ::effectNoiseLines,
+            ::glitchGridShake,
         ).shuffled().take(Random.nextInt(1, 4))
 
         effects.forEach { scope.launch { it() } }
@@ -130,5 +135,14 @@ class GlitchEngine {
             delay(Random.nextLong(40L, 100L))
         }
         noiseLines = emptyList()
+    }
+
+    private suspend fun glitchGridShake() {
+        val steps = Random.nextInt(5, 12)
+        repeat(steps) {
+            gridShake = Random.nextFloat() * 6f - 3f   // -3dp à +3dp
+            delay(Random.nextLong(25L, 60L))
+        }
+        gridShake = 0f
     }
 }

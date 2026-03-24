@@ -27,6 +27,8 @@ kotlin {
                 implementation(compose.material)
                 implementation(compose.ui)
                 implementation(compose.components.resources)
+
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
             }
         }
         val androidMain by getting {
