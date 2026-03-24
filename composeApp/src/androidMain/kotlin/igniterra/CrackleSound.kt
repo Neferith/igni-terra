@@ -286,4 +286,43 @@ actual object CrackleSound {
         mediaPlayer?.release()
         mediaPlayer = null
     }
+
+    actual fun dungeonHit() { playTones(listOf(220f to 30, 180f to 20), 0.4f, "square") }
+    actual fun dungeonEnemyDie() { playTones(listOf(440f to 60, 330f to 50, 220f to 80), 0.3f, "square") }
+    actual fun dungeonItemPickup() { playTones(listOf(523f to 60, 659f to 60, 784f to 100), 0.3f, "sine") }
+    actual fun dungeonLevelUp() { playTones(listOf(262f to 80, 330f to 80, 392f to 80, 523f to 80, 659f to 80, 784f to 160), 0.35f, "sine") }
+    actual fun dungeonGameOver() { playTones(listOf(330f to 150, 294f to 150, 262f to 150, 220f to 300), 0.35f, "square") }
+    actual fun dungeonVictory() { playTones(listOf(523f to 80, 523f to 80, 523f to 80, 415f to 240, 466f to 80, 523f to 320, 466f to 80, 523f to 400), 0.4f, "square") }
+
+    private fun playTones(notes: List<Pair<Float, Int>>, vol: Float, wave: String) {
+        Thread({
+            val totalSamples = notes.sumOf { (_, ms) -> (SAMPLE_RATE * ms / 1000.0).toInt() }
+            val buf = ShortArray(totalSamples)
+            var i = 0
+            for ((freq, ms) in notes) {
+                val n = (SAMPLE_RATE * ms / 1000.0).toInt()
+                repeat(n) { j ->
+                    val t = (i + j).toDouble() / SAMPLE_RATE
+                    val s = if (wave == "sine")
+                        kotlin.math.sin(2.0 * kotlin.math.PI * freq * t)
+                    else
+                        if ((freq * t) % 1.0 < 0.5) 1.0 else -1.0
+                    buf[i + j] = (s * vol * globalVolume * Short.MAX_VALUE).toInt()
+                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                }
+                i += n
+            }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(audioAttributes())
+                .setAudioFormat(monoFormat())
+                .setBufferSizeInBytes(totalSamples * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buf, 0, buf.size)
+            track.play()
+            Thread.sleep((totalSamples * 1000L / SAMPLE_RATE) + 50)
+            track.stop(); track.release()
+        }, "igniterra-dungeon").also { it.isDaemon = true; it.start() }
+    }
+
 }

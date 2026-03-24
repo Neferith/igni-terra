@@ -357,4 +357,332 @@ actual object CrackleSound {
         wavClip = null
         musicRunning
     }
+
+    actual fun dungeonHit() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 0.06f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 220Hz 30ms square
+                run { val end = i + 1323; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (220.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 180Hz 20ms noise
+                run { val end = i + 882; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = (Random.nextDouble() * 2.0 - 1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 0Hz 10ms noise
+                run { val end = i + 441; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = (Random.nextDouble() * 2.0 - 1.0) * 0.0 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonHit").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun dungeonEnemyDie() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 0.19f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 440Hz 60ms square
+                run { val end = i + 2646; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (440.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.35 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 330Hz 50ms square
+                run { val end = i + 2205; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (330.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 220Hz 80ms desc
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val localT = (i - 4851).toDouble() / SAMPLE_RATE
+                    val freq = 220.0 * Math.pow(0.5, localT * 3.0)
+                    val s = sin(2.0 * Math.PI * freq * t) * 0.25 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonEnemyDie").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun dungeonItemPickup() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 0.22f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 523Hz 60ms sine
+                run { val end = i + 2646; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 523.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 659Hz 60ms sine
+                run { val end = i + 2646; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 659.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 784Hz 100ms sine
+                run { val end = i + 4410; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 784.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonItemPickup").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun dungeonLevelUp() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 0.56f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 262Hz 80ms sine
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 262.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 330Hz 80ms sine
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 330.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 392Hz 80ms sine
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 392.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 523Hz 80ms sine
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 523.0 * t) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 659Hz 80ms sine
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 659.0 * t) * 0.35 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 784Hz 160ms sine
+                run { val end = i + 7056; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 784.0 * t) * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonLevelUp").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun dungeonGameOver() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 0.75f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 330Hz 150ms square
+                run { val end = i + 6615; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (330.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.35 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 294Hz 150ms square
+                run { val end = i + 6615; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (294.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.35 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 262Hz 150ms square
+                run { val end = i + 6615; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (262.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.35 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 220Hz 300ms square
+                run { val end = i + 13230; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (220.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonGameOver").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun dungeonVictory() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (44100 * 1.36f).toInt()
+                val buf = ByteArray(samples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                // 523Hz 80ms square
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (523.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 523Hz 80ms square
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (523.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 523Hz 80ms square
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (523.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 415Hz 240ms square
+                run { val end = i + 10584; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (415.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 466Hz 80ms square
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (466.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 523Hz 320ms square
+                run { val end = i + 14112; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (523.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 466Hz 80ms square
+                run { val end = i + 3528; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val phase = (466.0 * t) % 1.0
+                    val s = (if (phase < 0.5) 1.0 else -1.0) * 0.3 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                // 523Hz 400ms sine
+                run { val end = i + 17640; while (i < end && i < samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val s = sin(2.0 * Math.PI * 523.0 * t) * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                    i++ } }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-dungeonVictory").also { it.isDaemon = true; it.start() }
+    }
 }

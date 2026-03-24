@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import igniterra.CrackleSound
 import kotlin.random.Random
 
 // ── Types de base ─────────────────────────────────────────────────────────────
@@ -26,7 +27,7 @@ enum class EnemyType(
     SOLDIER    ("S", "Soldat Magitek",      8,  3, 1, 10),
     AUTOMATON  ("A", "Automate de Garde",  14,  4, 2, 20),
     CENTURION  ("C", "Centurion Garlean",  20,  6, 3, 35),
-    BOSS       ("X", "Légat Nerva",        60, 10, 4, 100, isBoss = true),
+    BOSS       ("X", "Valens van Varro",        60, 10, 4, 100, isBoss = true),
 }
 
 enum class ItemType(val displayChar: String, val displayName: String) {
@@ -212,6 +213,7 @@ class DungeonGame {
                 if (floor > 3) {
                     won = true
                     log.add("Victoire ! Vous avez conquis la citadelle !")
+                    CrackleSound.dungeonVictory()
                 } else {
                     log.add("Vous descendez au niveau $floor...")
                     generateFloor()
@@ -230,10 +232,12 @@ class DungeonGame {
         val dmg = max(1, player.atk - enemy.type.def + rng.nextInt(-1, 2))
         enemy.hp -= dmg
         log.add("Vous attaquez ${enemy.type.displayName} : $dmg dégâts.")
+        CrackleSound.dungeonHit()
         if (enemy.hp <= 0) {
             enemy.alive = false
             player = player.copy(xp = player.xp + enemy.type.xp)
             log.add("${enemy.type.displayName} vaincu ! +${enemy.type.xp} XP")
+            CrackleSound.dungeonEnemyDie()
             checkLevelUp()
             if (enemy.type.isBoss) {
                 log.add("Le boss est tombé ! Trouvez l'escalier.")
@@ -251,6 +255,7 @@ class DungeonGame {
         if (player.hp <= 0) {
             alive = false
             log.add("Vous êtes mort. Game over.")
+            CrackleSound.dungeonGameOver()
         }
     }
 
@@ -282,14 +287,17 @@ class DungeonGame {
                 val heal = 8
                 player = player.copy(hp = min(player.maxHp, player.hp + heal))
                 log.add("Potion d'Éther : +$heal PV.")
+                CrackleSound.dungeonItemPickup()
             }
             ItemType.CRYSTAL -> {
                 player = player.copy(atk = player.atk + 1)
                 log.add("Cristal de Foudre : +1 ATK !")
+                CrackleSound.dungeonItemPickup()
             }
             ItemType.ARMOR   -> {
                 player = player.copy(def = player.def + 1)
                 log.add("Armure Magitek : +1 DEF !")
+                CrackleSound.dungeonItemPickup()
             }
         }
     }
@@ -303,6 +311,7 @@ class DungeonGame {
                 atk   = player.atk + 1
             )
             log.add("Niveau ${player.level} ! +1 ATK, +5 PV.")
+            CrackleSound.dungeonLevelUp()
         }
     }
 

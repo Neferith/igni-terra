@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -86,9 +88,11 @@ fun DungeonOverlay(onDismiss: () -> Unit) {
                     DungeonMapView(game)
                 }
                 Box(Modifier.width(1.dp).fillMaxHeight().background(DBdr))
-                Column(Modifier.width(120.dp).fillMaxHeight().background(DPanel).padding(10.dp)) {
+                Column(
+                    Modifier.width(120.dp).fillMaxHeight().background(DPanel).padding(10.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     StatsPanel(game)
-                    Spacer(Modifier.height(10.dp))
                     LogPanel(game)
                 }
             }
@@ -217,11 +221,19 @@ private fun StatRow(label: String, value: String, color: Color = DT1) {
 // ── Log ───────────────────────────────────────────────────────────────────────
 @Composable
 private fun LogPanel(game: DungeonGame) {
+    val scroll = rememberScrollState()
+    LaunchedEffect(game.log.size) { scroll.animateScrollTo(scroll.maxValue) }
+
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("JOURNAL", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = DMono, color = DT3)
         Spacer(Modifier.height(2.dp))
-        game.log.forEach { line ->
-            Text(line, fontSize = 7.sp, fontFamily = DMono, color = DT2, lineHeight = 10.sp)
+        Column(
+            Modifier.verticalScroll(scroll),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            game.log.forEach { line ->
+                Text(line, fontSize = 7.sp, fontFamily = DMono, color = DT2, lineHeight = 10.sp)
+            }
         }
     }
 }

@@ -192,6 +192,51 @@ private external fun jsPlayWav(filename: String, loop: Boolean)
 }""")
 private external fun jsStopWav()
 
+@JsFun("""(notes, vol, wave) => {
+    try {
+        if (!window._igniterra_ctx) return;
+        const ctx = window._igniterra_ctx;
+        const out = window._igniterra_gain || ctx.destination;
+        const sr = ctx.sampleRate;
+        let timeOffset = ctx.currentTime + 0.01;
+        for (const [freq, ms] of notes) {
+            const dur = ms / 1000;
+            const samples = Math.floor(sr * dur);
+            const buf = ctx.createBuffer(1, samples, sr);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < samples; i++) {
+                const t = i / sr;
+                data[i] = wave === 'sine'
+                    ? Math.sin(2 * Math.PI * freq * t) * vol
+                    : ((freq * t) % 1 < 0.5 ? 1 : -1) * vol;
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buf; src.connect(out);
+            src.start(timeOffset);
+            timeOffset += dur;
+        }
+    } catch(e) {}
+}""")
+private external fun jsPlayTones(notes: JsAny, vol: Float, wave: String)
+
+@JsFun("""(notes, vol, wave) => {
+    const arr = [];
+    return arr;
+}""")
+private external fun jsEmptyArray(): JsAny
+
+@JsFun("(freq, ms) => [freq, ms]")
+private external fun jsNote(freq: Float, ms: Int): JsAny
+
+@JsFun("(arr, note) => { arr.push(note); return arr; }")
+private external fun jsPush(arr: JsAny, note: JsAny): JsAny
+
+private fun playTonesWasm(notes: List<Pair<Float, Int>>, vol: Float, wave: String) {
+    var arr = jsEmptyArray()
+    for ((freq, ms) in notes) arr = jsPush(arr, jsNote(freq, ms))
+    jsPlayTones(arr, vol, wave)
+}
+
 actual object CrackleSound {
     actual fun start()                      {}
     actual fun stop()                       {}
@@ -206,4 +251,11 @@ actual object CrackleSound {
 
     actual fun playWav(filename: String, loop: Boolean) = jsPlayWav(filename, loop)
     actual fun stopWav()                        = jsStopWav()
+
+    actual fun dungeonHit()        = playTonesWasm(listOf(220f to 30, 180f to 20), 0.4f, "square")
+    actual fun dungeonEnemyDie()   = playTonesWasm(listOf(440f to 60, 330f to 50, 220f to 80), 0.3f, "square")
+    actual fun dungeonItemPickup() = playTonesWasm(listOf(523f to 60, 659f to 60, 784f to 100), 0.3f, "sine")
+    actual fun dungeonLevelUp()    = playTonesWasm(listOf(262f to 80, 330f to 80, 392f to 80, 523f to 80, 659f to 80, 784f to 160), 0.35f, "sine")
+    actual fun dungeonGameOver()   = playTonesWasm(listOf(330f to 150, 294f to 150, 262f to 150, 220f to 300), 0.35f, "square")
+    actual fun dungeonVictory()    = playTonesWasm(listOf(523f to 80, 523f to 80, 523f to 80, 415f to 240, 466f to 80, 523f to 320, 466f to 80, 523f to 400), 0.4f, "square")
 }

@@ -19,4 +19,12 @@ expect object CrackleSound {
 
     fun playWav(filename: String, loop: Boolean = false)
     fun stopWav()
+
+    // Donjon
+    fun dungeonHit()
+    fun dungeonEnemyDie()
+    fun dungeonItemPickup()
+    fun dungeonLevelUp()
+    fun dungeonGameOver()
+    fun dungeonVictory()
 }
