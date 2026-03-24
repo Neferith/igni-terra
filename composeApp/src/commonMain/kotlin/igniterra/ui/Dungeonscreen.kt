@@ -51,6 +51,13 @@ fun DungeonOverlay(onDismiss: () -> Unit) {
 
     LaunchedEffect(Unit) { game.newGame() }
 
+    var fpsMode by remember { mutableStateOf(false) }
+
+    if (fpsMode) {
+        FpsView(game = game, onClose = { fpsMode = false })
+        return
+    }
+
 
 
     Box(
@@ -66,7 +73,7 @@ fun DungeonOverlay(onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
-            DungeonHeader(game, onDismiss)
+            DungeonHeader(game, onDismiss, { fpsMode = it })
             Box(Modifier.fillMaxWidth().height(1.dp).background(DBdr))
 
             // Corps : carte + stats
@@ -107,7 +114,7 @@ fun DungeonOverlay(onDismiss: () -> Unit) {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 @Composable
-private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit) {
+private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit, onFpsMode: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().background(DPanel).padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -121,6 +128,7 @@ private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit) {
             if (!game.alive || game.won) {
                 DungeonBtn("REJOUER", DRed) { game.newGame() }
             }
+            DungeonBtn("FPS", DTeal) { CrackleSound.click(); onFpsMode(true) }
             DungeonBtn(
                 if (game.demoMode) "DEMO ON" else "DEMO",
                 if (game.demoMode) DTeal else DGray
@@ -324,7 +332,7 @@ private fun DungeonDPad(enabled: Boolean, onMove: (Int, Int) -> Unit) {
 }
 
 @Composable
-private fun DungeonArrow(dx: Int, dy: Int, color: Color) {
+fun DungeonArrow(dx: Int, dy: Int, color: Color) {
     androidx.compose.foundation.Canvas(Modifier.size(10.dp)) {
         val w = size.width; val h = size.height
         val path = androidx.compose.ui.graphics.Path()
