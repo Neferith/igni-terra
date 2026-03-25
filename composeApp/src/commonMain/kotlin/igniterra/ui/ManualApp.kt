@@ -37,26 +37,26 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 // ── Palette ───────────────────────────────────────────────────────────────────
-val Bg      = Color(0xFF07101E)
-val Panel   = Color(0xFF0C1B30)
-public val Card    = Color(0xFF0E2040)
-val Teal    = Color(0xFF38C4C4)
-val TealDk  = Color(0xFF1C7070)
-private val Gold    = Color(0xFFC8A44A)
-val GoldDk  = Color(0xFF7A6028)
-val T1      = Color(0xFFD6EDF6)
-val T2      = Color(0xFF6EA8C0)
-public val T3      = Color(0xFF365470)
-val Bdr     = Color(0xFF152640)
-public val Red     = Color(0xFFC84040)
-private val RedBg   = Color(0x14C84040)
-private val RedBdr  = Color(0x40C84040)
-private val GoldBg  = Color(0x12C8A44A)
+val Bg = Color(0xFF07101E)
+val Panel = Color(0xFF0C1B30)
+public val Card = Color(0xFF0E2040)
+val Teal = Color(0xFF38C4C4)
+val TealDk = Color(0xFF1C7070)
+private val Gold = Color(0xFFC8A44A)
+val GoldDk = Color(0xFF7A6028)
+val T1 = Color(0xFFD6EDF6)
+val T2 = Color(0xFF6EA8C0)
+public val T3 = Color(0xFF365470)
+val Bdr = Color(0xFF152640)
+public val Red = Color(0xFFC84040)
+private val RedBg = Color(0x14C84040)
+private val RedBdr = Color(0x40C84040)
+private val GoldBg = Color(0x12C8A44A)
 private val GoldBdr = Color(0x40C8A44A)
-private val CFeu    = Color(0xFFC84040)
-private val CTerre  = Color(0xFF8A6030)
-private val CVent   = Color(0xFF38C4C4)
-public val Mono    = FontFamily.Monospace
+private val CFeu = Color(0xFFC84040)
+private val CTerre = Color(0xFF8A6030)
+private val CVent = Color(0xFF38C4C4)
+public val Mono = FontFamily.Monospace
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 enum class ManualSection(val num: String, val label: String) {
@@ -91,24 +91,25 @@ fun ManualApp() {
 @Composable
 private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     val glitch = remember { GlitchEngine() }
-    val scope  = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         glitch.startLoop(scope)
         CrackleSound.openDocument()
-      //  recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        //  recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
 
 
-    var selected       by remember { mutableStateOf(ManualSection.COVER) }
+    var selected by remember { mutableStateOf(ManualSection.COVER) }
     LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }
-    var drawerOpen     by remember { mutableStateOf(false) }
+    var drawerOpen by remember { mutableStateOf(false) }
     var secretUnlocked by remember { mutableStateOf(false) }
+    var secretReveled by remember { mutableStateOf(false) }
     var traducterUnlocked by remember { mutableStateOf(false) }
-    var emblemClicks   by remember { mutableStateOf(0) }
-    var snakeVisible   by remember { mutableStateOf(false) }
-    var badgeClicks    by remember { mutableStateOf(0) }
+    var emblemClicks by remember { mutableStateOf(0) }
+    var snakeVisible by remember { mutableStateOf(false) }
+    var badgeClicks by remember { mutableStateOf(0) }
     var dungeonVisible by remember { mutableStateOf(false) }
-    var docRefClicks   by remember { mutableStateOf(0) }
+    var docRefClicks by remember { mutableStateOf(0) }
     val (shakeX, shakeY) = glitch.contentShake
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -119,19 +120,21 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                 // ── Mode portrait : contenu plein écran + drawer overlay ──────
                 PortraitLayout(
                     scope = scope,
-                    glitch          = glitch,
-                    selected        = selected,
-                    drawerOpen      = drawerOpen,
-                    shakeX          = shakeX,
-                    shakeY          = shakeY,
-                    recipient       = recipient,
-                    secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
-                    onSelect        = { selected = it; drawerOpen = false },
-                    onToggle        = { drawerOpen = !drawerOpen },
-                    onDismiss       = { drawerOpen = false },
+                    glitch = glitch,
+                    selected = selected,
+                    drawerOpen = drawerOpen,
+                    shakeX = shakeX,
+                    shakeY = shakeY,
+                    recipient = recipient,
+                    secretUnlocked = secretUnlocked && recipient.hasSecretAccess,
+                    onSelect = { selected = it; drawerOpen = false },
+                    onToggle = { drawerOpen = !drawerOpen },
+                    onDismiss = { drawerOpen = false },
                     traducterUnlocked = traducterUnlocked,
+                    secretReveled = secretReveled,
+                    onSecretReveled = { secretReveled = true },
                     onEnableDungeon = { dungeonVisible = true },
-                    onEmblemClick   = {
+                    onEmblemClick = {
                         if (recipient.hasSecretAccess) {
                             emblemClicks++
                             if (emblemClicks >= 5) {
@@ -157,9 +160,9 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         .offset(shakeX.dp, shakeY.dp)
                 ) {
                     ManualSidebar(
-                        selected        = selected,
-                        secretUnlocked  = secretUnlocked && recipient.hasSecretAccess,
-                        onSelect        = { selected = it },
+                        selected = selected,
+                        secretUnlocked = secretUnlocked && recipient.hasSecretAccess,
+                        onSelect = { selected = it },
                         recipient = recipient,
                         traducterUnlocked = traducterUnlocked,
                         onBadgeClick = {
@@ -173,17 +176,19 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                     )
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
                     ManualContent(
-                        section    = selected,
-                        modifier   = Modifier.weight(1f).fillMaxHeight(),
-                        recipient  = recipient,
-                        emblemClicks    = emblemClicks,
+                        section = selected,
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        recipient = recipient,
+                        emblemClicks = emblemClicks,
                         glitch = glitch,
                         scope = scope,
                         translatorUnlocked = traducterUnlocked,
+                        secretReveled = secretReveled,
+                        onSecretReveled = { secretReveled = true },
                         onEnableDungeon = {
                             dungeonVisible = true
                         },
-                        onEmblemClick   = {
+                        onEmblemClick = {
                             if (recipient.hasSecretAccess) {
                                 emblemClicks++
                                 if (emblemClicks >= 5) {
@@ -225,19 +230,21 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
 @Composable
 private fun PortraitLayout(
     scope: CoroutineScope,
-    glitch         : GlitchEngine,
-    selected       : ManualSection,
-    drawerOpen     : Boolean,
-    shakeX         : Float,
-    shakeY         : Float,
-    recipient      : AppStrings.Recipient,
-    secretUnlocked : Boolean = false,
+    glitch: GlitchEngine,
+    selected: ManualSection,
+    drawerOpen: Boolean,
+    shakeX: Float,
+    shakeY: Float,
+    recipient: AppStrings.Recipient,
+    secretUnlocked: Boolean = false,
     traducterUnlocked: Boolean,
-    onSelect       : (ManualSection) -> Unit,
-    onToggle       : () -> Unit,
-    onDismiss      : () -> Unit,
+    onSelect: (ManualSection) -> Unit,
+    onToggle: () -> Unit,
+    onDismiss: () -> Unit,
+    secretReveled: Boolean,
+    onSecretReveled: () -> Unit,
     onEnableDungeon: () -> Unit,
-    onEmblemClick  : () -> Unit = {},
+    onEmblemClick: () -> Unit = {},
     onBadgeClick: () -> Unit = {},
 ) {
     val drawerWidth = 220.dp
@@ -254,7 +261,18 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, translatorUnlocked = traducterUnlocked, onEmblemClick = onEmblemClick,  onEnableDungeon = onEnableDungeon)
+                    ManualContent(
+                        selected,
+                        Modifier.fillMaxSize(),
+                        recipient,
+                        glitch = glitch,
+                        scope = scope,
+                        secretReveled = secretReveled,
+                        onSecretReveled = onSecretReveled,
+                        translatorUnlocked = traducterUnlocked,
+                        onEmblemClick = onEmblemClick,
+                        onEnableDungeon = onEnableDungeon
+                    )
                 }
             }
         }
@@ -271,8 +289,8 @@ private fun PortraitLayout(
         // Drawer qui slide depuis la gauche
         Box(Modifier.offset(x = offsetX).width(drawerWidth).fillMaxHeight()) {
             ManualSidebar(
-                selected       = selected,
-                onSelect       = onSelect,
+                selected = selected,
+                onSelect = onSelect,
                 recipient = recipient,
                 traducterUnlocked = traducterUnlocked,
                 secretUnlocked = secretUnlocked
@@ -282,8 +300,10 @@ private fun PortraitLayout(
 }
 
 @Composable
-private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
-                           onBadgeClick  : () -> Unit = {},) {
+private fun PortraitHeader(
+    selected: ManualSection, onMenuClick: () -> Unit,
+    onBadgeClick: () -> Unit = {},
+) {
     Row(
         Modifier.fillMaxWidth().background(Panel)
             .border(BorderStroke(1.dp, Bdr))
@@ -320,7 +340,13 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
                 .clickable { onBadgeClick() }
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
-            Text(AppStrings.Header.badge.uppercase(), fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = Gold)
+            Text(
+                AppStrings.Header.badge.uppercase(),
+                fontSize = 7.sp,
+                letterSpacing = 2.sp,
+                fontFamily = Mono,
+                color = Gold
+            )
         }
     }
 }
@@ -328,15 +354,15 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 @Composable
 private fun ManualSidebar(
-    selected          : ManualSection,
-    onSelect          : (ManualSection) -> Unit,
-    recipient         : AppStrings.Recipient,
-    secretUnlocked    : Boolean = false,
-    traducterUnlocked : Boolean,
-    onBadgeClick      : () -> Unit = {},
+    selected: ManualSection,
+    onSelect: (ManualSection) -> Unit,
+    recipient: AppStrings.Recipient,
+    secretUnlocked: Boolean = false,
+    traducterUnlocked: Boolean,
+    onBadgeClick: () -> Unit = {},
 ) {
     var volume by remember { mutableStateOf(1f) }
-    var muted  by remember { mutableStateOf(false) }
+    var muted by remember { mutableStateOf(false) }
 
     Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
 
@@ -394,28 +420,47 @@ private fun ManualSidebar(
                                 }
                                 .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
-                            Text(if (musicPlaying) "STOP" else "PLAY", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (musicPlaying) Teal else T3)
+                            Text(
+                                if (musicPlaying) "STOP" else "PLAY",
+                                fontSize = 7.sp,
+                                letterSpacing = 2.sp,
+                                fontFamily = Mono,
+                                color = if (musicPlaying) Teal else T3
+                            )
                         }
                         Box(
                             Modifier
                                 .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
-                                .clickable { muted = !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click() }
+                                .clickable {
+                                    muted =
+                                        !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click()
+                                }
                                 .padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
-                            Text(if (muted) "MUET" else "ON", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (muted) Red.copy(alpha = 0.5f) else TealDk)
+                            Text(
+                                if (muted) "MUET" else "ON",
+                                fontSize = 7.sp,
+                                letterSpacing = 2.sp,
+                                fontFamily = Mono,
+                                color = if (muted) Red.copy(alpha = 0.5f) else TealDk
+                            )
                         }
                     }
                 }
-        }
+            }
 
-        // Bas fixe — volume + badge
+            // Bas fixe — volume + badge
 
             Spacer(Modifier.height(4.dp))
             Slider(
                 value = if (muted) 0f else volume,
                 onValueChange = { v -> volume = v; if (muted && v > 0f) muted = false; CrackleSound.setVolume(v) },
                 modifier = Modifier.fillMaxWidth().height(24.dp),
-                colors = androidx.compose.material.SliderDefaults.colors(thumbColor = Teal, activeTrackColor = Teal, inactiveTrackColor = Bdr)
+                colors = androidx.compose.material.SliderDefaults.colors(
+                    thumbColor = Teal,
+                    activeTrackColor = Teal,
+                    inactiveTrackColor = Bdr
+                )
             )
         }
         HRule()
@@ -425,7 +470,13 @@ private fun ManualSidebar(
                     .clickable { onBadgeClick() }
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
-                Text(AppStrings.Header.badge.uppercase(), fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = Gold)
+                Text(
+                    AppStrings.Header.badge.uppercase(),
+                    fontSize = 8.sp,
+                    letterSpacing = 3.sp,
+                    fontFamily = Mono,
+                    color = Gold
+                )
             }
         }
     }
@@ -458,32 +509,43 @@ private fun SideNavItem(section: ManualSection, active: Boolean, accent: Color =
 // ── Content ───────────────────────────────────────────────────────────────────
 @Composable
 private fun ManualContent(
-    section       : ManualSection,
-    modifier      : Modifier,
-    recipient     : AppStrings.Recipient? = null,
-    emblemClicks  : Int = 0,
+    section: ManualSection,
+    modifier: Modifier,
+    recipient: AppStrings.Recipient? = null,
+    emblemClicks: Int = 0,
     translatorUnlocked: Boolean,
     glitch: GlitchEngine,
     scope: CoroutineScope,
+    secretReveled: Boolean,
+    onSecretReveled: (() -> Unit)?,
     onEnableDungeon: () -> Unit,
-    onEmblemClick : () -> Unit = {},
-    onBadgeClick  : () -> Unit = {},
-    onDocRefClick  : () -> Unit = {}
+    onEmblemClick: () -> Unit = {},
+    onBadgeClick: () -> Unit = {},
+    onDocRefClick: () -> Unit = {}
 ) {
     val scroll = rememberScrollState()
     LaunchedEffect(section) { scroll.scrollTo(0) }
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
             when (section) {
-                ManualSection.COVER      -> CoverSection(recipient, onEmblemClick, onBadgeClick)
-                ManualSection.OVERVIEW   -> OverviewSection()
-                ManualSection.SPECS      -> SpecsSection()
+                ManualSection.COVER -> CoverSection(recipient, onEmblemClick, onBadgeClick)
+                ManualSection.OVERVIEW -> OverviewSection()
+                ManualSection.SPECS -> SpecsSection()
                 ManualSection.COMPONENTS -> ComponentsSection()
                 ManualSection.FIRE_MODES -> FireModesSection()
-                ManualSection.SAFETY     -> SafetySection()
-                ManualSection.LEGAL      -> LegalSection()
-                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope, translatorUnlocked = translatorUnlocked, onEnableDungeon = onEnableDungeon)
-                ManualSection.TRADUCTER ->  TraducterSection(recipient,glitch, scope)
+                ManualSection.SAFETY -> SafetySection()
+                ManualSection.LEGAL -> LegalSection()
+                ManualSection.SECRET -> SecretSection(
+                    recipient,
+                    glitch,
+                    scope,
+                    translatorUnlocked = translatorUnlocked,
+                    secretReveled = secretReveled,
+                    onSecretReveled = onSecretReveled,
+                    onEnableDungeon = onEnableDungeon
+                )
+
+                ManualSection.TRADUCTER -> TraducterSection(recipient, glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
             HRule()
@@ -492,7 +554,7 @@ private fun ManualContent(
                 Text(
                     AppStrings.Footer.docRef, fontSize = 9.sp, fontFamily = Mono, color = T3,
                     modifier = Modifier.clickable {
-                       onDocRefClick()
+                        onDocRefClick()
                     }
                 )
                 Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
@@ -504,10 +566,13 @@ private fun ManualContent(
 }
 
 
-
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
-private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick: () -> Unit = {}, onBadgeClick: () -> Unit = {}) {
+private fun CoverSection(
+    recipient: AppStrings.Recipient? = null,
+    onEmblemClick: () -> Unit = {},
+    onBadgeClick: () -> Unit = {}
+) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
         NouvelLuneLogo(Modifier.size(80.dp).clickable { onEmblemClick() })
@@ -520,6 +585,21 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick:
         )
         Spacer(Modifier.height(6.dp))
         Text(AppStrings.Cover.subtitle, fontSize = 10.sp, letterSpacing = 5.sp, color = Gold)
+        Spacer(Modifier.height(36.dp))
+        // Note de transmission
+        if (recipient != null) {
+            Spacer(Modifier.height(20.dp))
+            Column(
+                Modifier.widthIn(max = 440.dp)
+                    .background(GoldBg)
+                    .border(1.dp, GoldBdr)
+                    .padding(16.dp)
+            ) {
+                Text("NOTE DE TRANSMISSION", fontSize = 7.sp, letterSpacing = 3.sp, color = Gold, fontFamily = Mono)
+                Spacer(Modifier.height(8.dp))
+                Text(recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
+            }
+        }
         Spacer(Modifier.height(36.dp))
         Column(Modifier.widthIn(max = 440.dp).border(1.dp, Bdr)) {
             Row(Modifier.fillMaxWidth()) {
@@ -537,23 +617,14 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick:
             Row(Modifier.fillMaxWidth()) {
                 CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
-                CoverMetaCell(AppStrings.Cover.Meta.author2Label, AppStrings.Cover.Meta.author2Value, Modifier.weight(1f))
+                CoverMetaCell(
+                    AppStrings.Cover.Meta.author2Label,
+                    AppStrings.Cover.Meta.author2Value,
+                    Modifier.weight(1f)
+                )
             }
         }
-        // Note de transmission
-        if (recipient != null) {
-            Spacer(Modifier.height(20.dp))
-            Column(
-                Modifier.widthIn(max = 440.dp)
-                    .background(GoldBg)
-                    .border(1.dp, GoldBdr)
-                    .padding(16.dp)
-            ) {
-                Text("NOTE DE TRANSMISSION", fontSize = 7.sp, letterSpacing = 3.sp, color = Gold, fontFamily = Mono)
-                Spacer(Modifier.height(8.dp))
-                Text(recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
-            }
-        }
+
         Spacer(Modifier.height(16.dp))
         Text(
             "N° SÉRIE : ${AppStrings.serialNumber}",
@@ -622,19 +693,19 @@ private fun OverviewSection() {
 private fun SpecsSection() {
     SectionHead(AppStrings.S02.num, AppStrings.S02.title)
     val specs = listOf(
-        AppStrings.S02.Spec.nameLabel       to AppStrings.S02.Spec.nameValue,
-        AppStrings.S02.Spec.energyLabel     to AppStrings.S02.Spec.energyValue,
-        AppStrings.S02.Spec.fuelLabel       to AppStrings.S02.Spec.fuelValue,
-        AppStrings.S02.Spec.rangeLabel      to AppStrings.S02.Spec.rangeValue,
-        AppStrings.S02.Spec.controlLabel    to AppStrings.S02.Spec.controlValue,
-        AppStrings.S02.Spec.ignitionLabel   to AppStrings.S02.Spec.ignitionValue,
-        AppStrings.S02.Spec.archLabel       to AppStrings.S02.Spec.archValue,
+        AppStrings.S02.Spec.nameLabel to AppStrings.S02.Spec.nameValue,
+        AppStrings.S02.Spec.energyLabel to AppStrings.S02.Spec.energyValue,
+        AppStrings.S02.Spec.fuelLabel to AppStrings.S02.Spec.fuelValue,
+        AppStrings.S02.Spec.rangeLabel to AppStrings.S02.Spec.rangeValue,
+        AppStrings.S02.Spec.controlLabel to AppStrings.S02.Spec.controlValue,
+        AppStrings.S02.Spec.ignitionLabel to AppStrings.S02.Spec.ignitionValue,
+        AppStrings.S02.Spec.archLabel to AppStrings.S02.Spec.archValue,
         AppStrings.S02.Spec.combustionLabel to AppStrings.S02.Spec.combustionValue,
-        AppStrings.S02.Spec.dimensionsLabel  to AppStrings.S02.Spec.dimensionsValue,
+        AppStrings.S02.Spec.dimensionsLabel to AppStrings.S02.Spec.dimensionsValue,
         AppStrings.S02.Spec.weightEmptyLabel to AppStrings.S02.Spec.weightEmptyValue,
-        AppStrings.S02.Spec.weightFullLabel  to AppStrings.S02.Spec.weightFullValue,
-        AppStrings.S02.Spec.materialsLabel   to AppStrings.S02.Spec.materialsValue,
-        AppStrings.S02.Spec.autonomyLabel    to AppStrings.S02.Spec.autonomyValue,
+        AppStrings.S02.Spec.weightFullLabel to AppStrings.S02.Spec.weightFullValue,
+        AppStrings.S02.Spec.materialsLabel to AppStrings.S02.Spec.materialsValue,
+        AppStrings.S02.Spec.autonomyLabel to AppStrings.S02.Spec.autonomyValue,
     )
     val rows = specs.chunked(2)
     Column(Modifier.fillMaxWidth().background(Card).border(1.dp, Bdr)) {
@@ -656,11 +727,11 @@ private fun SpecsSection() {
             fontSize = 8.sp, letterSpacing = 3.sp, color = T3,
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        MixRow(AppStrings.S02.Sub1.comp1Label, AppStrings.S02.Sub1.comp1Ratio, CFeu,   AppStrings.S02.Sub1.comp1Effect)
+        MixRow(AppStrings.S02.Sub1.comp1Label, AppStrings.S02.Sub1.comp1Ratio, CFeu, AppStrings.S02.Sub1.comp1Effect)
         Spacer(Modifier.height(10.dp))
         MixRow(AppStrings.S02.Sub1.comp2Label, AppStrings.S02.Sub1.comp2Ratio, CTerre, AppStrings.S02.Sub1.comp2Effect)
         Spacer(Modifier.height(10.dp))
-        MixRow(AppStrings.S02.Sub1.comp3Label, AppStrings.S02.Sub1.comp3Ratio, CVent,  AppStrings.S02.Sub1.comp3Effect)
+        MixRow(AppStrings.S02.Sub1.comp3Label, AppStrings.S02.Sub1.comp3Ratio, CVent, AppStrings.S02.Sub1.comp3Effect)
     }
     Spacer(Modifier.height(14.dp))
     Prose(AppStrings.S02.Sub1.body)
@@ -906,7 +977,7 @@ fun GlitchOverlay(engine: GlitchEngine, modifier: Modifier = Modifier) {
             drawRect(
                 color = Teal.copy(alpha = alpha),
                 topLeft = Offset(engine.scanlineShift.dp.toPx(), posY * size.height),
-                size    = androidx.compose.ui.geometry.Size(size.width, heightDp.dp.toPx())
+                size = androidx.compose.ui.geometry.Size(size.width, heightDp.dp.toPx())
             )
         }
         // Flash de surface
@@ -930,34 +1001,34 @@ private fun ComponentDiagram() {
         )
 
         DiagramBlock(
-            title    = "BUSE DE SORTIE",
-            color    = Teal,
-            entries  = listOf(
+            title = "BUSE DE SORTIE",
+            color = Teal,
+            entries = listOf(
                 "Électrodes" to "Angle de convergence calibré",
-                "Arc"        to "Arc électrique permanent (gâchette enfoncée)"
+                "Arc" to "Arc électrique permanent (gâchette enfoncée)"
             )
         )
 
         DiagramConnector()
 
         DiagramBlock(
-            title    = "MODULE PROPULSION",
-            color    = Gold,
-            entries  = listOf(
+            title = "MODULE PROPULSION",
+            color = Gold,
+            entries = listOf(
                 "Résistance variable" to "Mécanique, pilotée par la gâchette",
-                "Débit"              to "Pression légère → α  |  Pression forte → γ"
+                "Débit" to "Pression légère → α  |  Pression forte → γ"
             )
         )
 
         DiagramConnector()
 
         DiagramBlock(
-            title    = "MODULE ÉNERGIE",
-            color    = TealDk,
-            entries  = listOf(
-                "Bobine Magitek"    to "Génère l'arc électrique",
+            title = "MODULE ÉNERGIE",
+            color = TealDk,
+            entries = listOf(
+                "Bobine Magitek" to "Génère l'arc électrique",
                 "Cristal de Foudre" to "Logement caoutchouc anti-vibrations",
-                "Réinjection EM"    to "Boucle fermée — réduit la consommation du cristal"
+                "Réinjection EM" to "Boucle fermée — réduit la consommation du cristal"
             )
         )
     }
@@ -965,9 +1036,9 @@ private fun ComponentDiagram() {
 
 @Composable
 private fun DiagramBlock(
-    title   : String,
-    color   : Color,
-    entries : List<Pair<String, String>>
+    title: String,
+    color: Color,
+    entries: List<Pair<String, String>>
 ) {
     Column(
         Modifier.fillMaxWidth()
@@ -1032,15 +1103,15 @@ fun EngravedHorizontalDivider() {
             .height(4.dp)
             .drawBehind {
                 drawLine(
-                    color       = Color(0xFF000000),
-                    start       = Offset(0f, size.height / 2f),
-                    end         = Offset(size.width, size.height / 2f),
+                    color = Color(0xFF000000),
+                    start = Offset(0f, size.height / 2f),
+                    end = Offset(size.width, size.height / 2f),
                     strokeWidth = 1f,
                 )
                 drawLine(
-                    color       = Color(0x22FFFFFF),
-                    start       = Offset(0f, size.height / 2f + 1f),
-                    end         = Offset(size.width, size.height / 2f + 1f),
+                    color = Color(0x22FFFFFF),
+                    start = Offset(0f, size.height / 2f + 1f),
+                    end = Offset(size.width, size.height / 2f + 1f),
                     strokeWidth = 1f,
                 )
             },
@@ -1057,15 +1128,15 @@ fun EngravedVerticalDivider() {
             .width(4.dp)
             .drawBehind {
                 drawLine(
-                    color       = Color(0xFF000000),
-                    start       = Offset(size.width / 2f, 0f),
-                    end         = Offset(size.width / 2f, size.height),
+                    color = Color(0xFF000000),
+                    start = Offset(size.width / 2f, 0f),
+                    end = Offset(size.width / 2f, size.height),
                     strokeWidth = 1f,
                 )
                 drawLine(
-                    color       = Color(0x22FFFFFF),
-                    start       = Offset(size.width / 2f + 1f, 0f),
-                    end         = Offset(size.width / 2f + 1f, size.height),
+                    color = Color(0x22FFFFFF),
+                    start = Offset(size.width / 2f + 1f, 0f),
+                    end = Offset(size.width / 2f + 1f, size.height),
                     strokeWidth = 1f,
                 )
             },
@@ -1074,52 +1145,61 @@ fun EngravedVerticalDivider() {
 
 @Composable
 fun EngravedText(
-    text         : String,
-    fontSize     : TextUnit,
-    modifier     : Modifier = Modifier,
-    textAlign    : TextAlign = TextAlign.Start,
+    text: String,
+    fontSize: TextUnit,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start,
     letterSpacing: TextUnit = TextUnit.Unspecified,
-    alpha        : Float = 1f,
+    alpha: Float = 1f,
 ) {
     Text(
-        text          = text,
-        textAlign     = textAlign,
-        fontSize      = fontSize,
+        text = text,
+        textAlign = textAlign,
+        fontSize = fontSize,
         letterSpacing = letterSpacing,
-        fontFamily    = Mono,
-        color         = TealDk.copy(alpha = alpha),
-        modifier      = modifier,
+        fontFamily = Mono,
+        color = TealDk.copy(alpha = alpha),
+        modifier = modifier,
     )
 }
+
 enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
+
 @Composable
 fun SecretSection(
     recipient: AppStrings.Recipient?,
     glitch: GlitchEngine,
     scope: CoroutineScope,
+    secretReveled: Boolean,
+    onSecretReveled: (() -> Unit)?,
     translatorUnlocked: Boolean,
-    onEnableDungeon: () -> Unit ) {
+    onEnableDungeon: () -> Unit
+) {
 
 
     LaunchedEffect(Unit) {
 
-       //  recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        //  recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
 
 
+    var phase by remember { mutableStateOf(if (!secretReveled) SecretPhase.ELEANOR else SecretPhase.CIPHER) }
 
-    var phase         by remember { mutableStateOf(SecretPhase.ELEANOR) }
+    val eleanorText =
+        "Ma chérie si tu savais comme je suis heureuse de t'avoir rencontré. Dans le fond, je crois que j'étais obscurité me voilà lumière. Avec toi, je me sens véritablement complète. Je voudrais pouvoir passer tellement plus de temps avec toi. Tout mon temps. Alors volons toutes les deux, volons loin de ce monde fou. Emportons tout avec nous. Ne reste que notre amour. Attend un peu, après ce message, ce n'est pas encore terminé."
 
-    val eleanorText = "Ma chérie si tu savais comme je suis heureuse de t'avoir rencontré. Dans le fond, je crois que j'étais obscurité me voilà lumière. Avec toi, je me sens véritablement complète. Je voudrais pouvoir passer tellement plus de temps avec toi. Tout mon temps. Alors volons toutes les deux, volons loin de ce monde fou. Emportons tout avec nous. Ne reste que notre amour. Attend un peu, après ce message, ce n'est pas encore terminé."
-
-    val decimusText = "J’ai placé une bombe quelque part. Alors, si tu lis ce message, Adrila, garde le sourire et ne fais rien. N'en parle à personne et surtout pas à ton petit robot de compagnie, Eleanor, sinon je fais tout exploser. Fais un grand sourire dérangeant à tous tes petits compagnons et jouons. Je dispose de tout le temps nécessaire, mais ce n’est pas le cas pour toi, alors sois prudente. Quand vous aurez fini votre entrainement au lance-flamme, tu pourras t'atteler à déchiffrer mon message."
+    val decimusText =
+        "J’ai placé une bombe quelque part. Alors, si tu lis ce message, Adrila, garde le sourire et ne fais rien. N'en parle à personne et surtout pas à ton petit robot de compagnie, Eleanor, sinon je fais tout exploser. Fais un grand sourire dérangeant à tous tes petits compagnons et jouons. Je dispose de tout le temps nécessaire, mais ce n’est pas le cas pour toi, alors sois prudente. Quand vous aurez fini votre entrainement au lance-flamme, tu pourras t'atteler à déchiffrer mon message."
 
     var displayedText by remember { mutableStateOf("") }
-    var revealed      by remember { mutableStateOf(false) }
+    var revealed by remember { mutableStateOf(false) }
     var loaderProgress by remember { mutableStateOf(0f) }
 
     LaunchedEffect(Unit) {
-       // recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+
+        if (secretReveled) {
+            return@LaunchedEffect
+        }
         CrackleSound.playWav("HomeBeyondTheHorizon.mp3", true)
 
         // ── Eleanor ───────────────────────────────────────────────────────────
@@ -1131,13 +1211,7 @@ fun SecretSection(
         }
 
         // ── Glitches ──────────────────────────────────────────────────────────
-       /* phase = SecretPhase.GLITCH
-        displayedText = ""
-        repeat(6) {
-            glitch.triggerNavGlitch(scope)
-            CrackleSound.click()
-            delay(250L)
-        }*/
+
         // Phase GLITCH
         phase = SecretPhase.GLITCH
         displayedText = ""
@@ -1178,6 +1252,7 @@ fun SecretSection(
         repeat(2) { glitch.triggerNavGlitch(scope); delay(200L) }
         phase = SecretPhase.CIPHER
         revealed = true
+        onSecretReveled?.invoke()
     }
 
 
@@ -1204,42 +1279,42 @@ fun SecretSection(
     Spacer(Modifier.height(8.dp))
 
     // Texte progressif
-  /*  if (displayedText.isNotEmpty()) {
-        Prose(
-            displayedText,
-            // Couleur différente selon la phase
-            color = if (phase >= 2) Red.copy(alpha = 0.9f) else T2
-        )
-        Spacer(Modifier.height(8.dp))
-    }*/
-   /* when (phase) {
-        SecretPhase.ELEANOR -> {
-            Prose(displayedText, color = T2)
-        }
-        SecretPhase.GLITCH -> {
-            // Rien — juste les glitches visuels
-        }
-        SecretPhase.LOGO -> {
-            Box(
-                Modifier.fillMaxWidth().height(220.dp).background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                GarleanEmblem(
-                    canvasSize     = 160.dp,
-                    loaderDuration = 2000L,
-                    onComplete     = { scope.launch { phase = SecretPhase.DECIMUS } }
-                )
-            }
-        }
-        SecretPhase.DECIMUS -> {
-            Prose(displayedText, color = Red.copy(alpha = 0.9f))
-        }
-        SecretPhase.CIPHER -> {
-            Prose(decimusText, color = Red.copy(alpha = 0.9f))
-            Spacer(Modifier.height(16.dp))
-            // Ton bloc cipher existant
-        }
-    }*/
+    /*  if (displayedText.isNotEmpty()) {
+          Prose(
+              displayedText,
+              // Couleur différente selon la phase
+              color = if (phase >= 2) Red.copy(alpha = 0.9f) else T2
+          )
+          Spacer(Modifier.height(8.dp))
+      }*/
+    /* when (phase) {
+         SecretPhase.ELEANOR -> {
+             Prose(displayedText, color = T2)
+         }
+         SecretPhase.GLITCH -> {
+             // Rien — juste les glitches visuels
+         }
+         SecretPhase.LOGO -> {
+             Box(
+                 Modifier.fillMaxWidth().height(220.dp).background(Color.White),
+                 contentAlignment = Alignment.Center
+             ) {
+                 GarleanEmblem(
+                     canvasSize     = 160.dp,
+                     loaderDuration = 2000L,
+                     onComplete     = { scope.launch { phase = SecretPhase.DECIMUS } }
+                 )
+             }
+         }
+         SecretPhase.DECIMUS -> {
+             Prose(displayedText, color = Red.copy(alpha = 0.9f))
+         }
+         SecretPhase.CIPHER -> {
+             Prose(decimusText, color = Red.copy(alpha = 0.9f))
+             Spacer(Modifier.height(16.dp))
+             // Ton bloc cipher existant
+         }
+     }*/
 
 
     // Phase ELEANOR — texte tendre, disparaît au glitch
@@ -1252,12 +1327,12 @@ fun SecretSection(
     if (phase == SecretPhase.GLITCH && displayedText.isNotEmpty()) {
         Text(
             displayedText,
-            fontSize      = 11.sp,
-            fontFamily    = Mono,
-            color         = Red.copy(alpha = 0.7f),
+            fontSize = 11.sp,
+            fontFamily = Mono,
+            color = Red.copy(alpha = 0.7f),
             letterSpacing = 3.sp,
-            lineHeight    = 16.sp,
-            modifier      = Modifier.padding(horizontal = 16.dp)
+            lineHeight = 16.sp,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
         Spacer(Modifier.height(16.dp))
     }
@@ -1269,11 +1344,13 @@ fun SecretSection(
             contentAlignment = Alignment.Center
         ) {
             GarleanEmblem(
-                canvasSize     = 160.dp,
+                canvasSize = 160.dp,
                 loaderDuration = 2000L,
-                onComplete     = { scope.launch {
-                    if (phase == SecretPhase.LOGO) phase = SecretPhase.DECIMUS
-                }}
+                onComplete = {
+                    scope.launch {
+                        if (phase == SecretPhase.LOGO) phase = SecretPhase.DECIMUS
+                    }
+                }
             )
         }
         Spacer(Modifier.height(16.dp))
@@ -1287,8 +1364,8 @@ fun SecretSection(
 
 // Cipher — visible en phase CIPHER
     if (phase == SecretPhase.CIPHER) {
-     //   Prose(displayedText, color = T2)
-       // Spacer(Modifier.height(16.dp))
+        //   Prose(displayedText, color = T2)
+        // Spacer(Modifier.height(16.dp))
         Spacer(Modifier.height(16.dp))
         Box(
             Modifier
@@ -1296,10 +1373,10 @@ fun SecretSection(
                 .border(1.dp, Red.copy(alpha = 0.4f))
                 .clickable {
                     onEnableDungeon()
-                  /*  val game = DungeonGame()
-                    game.newGame()
-                    dungeonGame  = game
-                    showDungeon  = true*/
+                    /*  val game = DungeonGame()
+                      game.newGame()
+                      dungeonGame  = game
+                      showDungeon  = true*/
                     CrackleSound.click()
                 }
                 .padding(vertical = 12.dp),
@@ -1307,52 +1384,51 @@ fun SecretSection(
         ) {
             Text(
                 "Joue avec moi, Adrila.",
-                fontSize      = 10.sp,
+                fontSize = 10.sp,
                 letterSpacing = 3.sp,
-                fontFamily    = Mono,
-                color         = Red.copy(alpha = 0.8f)
+                fontFamily = Mono,
+                color = Red.copy(alpha = 0.8f)
             )
         }
         Spacer(Modifier.height(16.dp))
 
         val chunks = message.words.reversed().chunked(4)
 
-        if (revealed) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Card)
-                    .border(1.dp, Bdr)
-                    //.verticalScroll(scrollState)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                chunks.forEachIndexed { chunkIdx, chunk ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        chunk.forEachIndexed { colIdx, codes ->
-                            EngravedCodeColumn(
-                                codes = codes,
-                                modifier = Modifier.widthIn(min = 60.dp),
-                                translatorUnlocked = translatorUnlocked
-                            )
-                            if (colIdx < chunk.size - 1) {
-                                EngravedVerticalDivider()
-                            }
-                        }
-                        repeat(4 - chunk.size) {
-                            Spacer(Modifier.widthIn(min = 60.dp))
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Card)
+                .border(1.dp, Bdr)
+                //.verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            chunks.forEachIndexed { chunkIdx, chunk ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    chunk.forEachIndexed { colIdx, codes ->
+                        EngravedCodeColumn(
+                            codes = codes,
+                            modifier = Modifier.widthIn(min = 60.dp),
+                            translatorUnlocked = translatorUnlocked
+                        )
+                        if (colIdx < chunk.size - 1) {
+                            EngravedVerticalDivider()
                         }
                     }
-                    if (chunkIdx < chunks.size - 1) {
-                        EngravedHorizontalDivider()
+                    repeat(4 - chunk.size) {
+                        Spacer(Modifier.widthIn(min = 60.dp))
                     }
+                }
+                if (chunkIdx < chunks.size - 1) {
+                    EngravedHorizontalDivider()
                 }
             }
         }
+
     }
 
 
@@ -1362,13 +1438,13 @@ fun SecretSection(
 
 @Composable
 fun EngravedCodeColumn(
-    codes              : List<String>,
-    modifier           : Modifier = Modifier,
+    codes: List<String>,
+    modifier: Modifier = Modifier,
     translatorUnlocked: Boolean
 ) {
 
     Column(
-        modifier            = modifier.padding(horizontal = 8.dp),
+        modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -1379,13 +1455,13 @@ fun EngravedCodeColumn(
             }
 
             Text(
-                text          = if (translated) decoded else code,
-                fontSize      = 11.sp,
-                fontFamily    = Mono,
-                color         = if (translated) Teal else TealDk.copy(alpha = 0.7f),
+                text = if (translated) decoded else code,
+                fontSize = 11.sp,
+                fontFamily = Mono,
+                color = if (translated) Teal else TealDk.copy(alpha = 0.7f),
                 letterSpacing = 2.sp,
-                textAlign     = TextAlign.Center,
-                modifier      = Modifier.pointerInput(translatorUnlocked) {
+                textAlign = TextAlign.Center,
+                modifier = Modifier.pointerInput(translatorUnlocked) {
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent()
