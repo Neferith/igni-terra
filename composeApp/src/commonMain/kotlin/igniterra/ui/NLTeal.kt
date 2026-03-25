@@ -2,17 +2,18 @@ package igniterra.ui
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.random.Random
 
 private val NLTeal      = Color(0xFF2AACAC)
@@ -131,19 +132,32 @@ fun NouvelLuneLogo(
         // ── Cercle principal noir ─────────────────────────────────────────────
         drawCircle(color = NLBlack, radius = r, center = Offset(cx, cy))
 
-        // ── Croissant blanc ───────────────────────────────────────────────────
-        val crescentPath = Path().apply {
-            addOval(androidx.compose.ui.geometry.Rect(cx - r*0.84f, cy - r*0.84f, cx + r*0.84f, cy + r*0.84f))
-        }
-        clipPath(crescentPath) {
-            drawCircle(color = Color.White, radius = r * 0.84f, center = Offset(cx, cy))
-        }
+        // ── Lune : croissant noir (fond) + croissant blanc (dessus) ─────────
+        val innerR = r * 0.84f
 
-        // Masque noir du croissant (cercle décalé)
-        val maskR  = r * 0.69f
-        val maskCx = cx - r * 0.30f
-        val maskCy = cy - r * 0.16f
-        drawCircle(color = NLBlack, radius = maskR, center = Offset(maskCx, maskCy))
+        // 1. Disque entier en sombre — devient le croissant noir de base
+        drawCircle(color = Color(0xFF1C2535), radius = innerR, center = Offset(cx, cy))
+
+        // 2. Croissant blanc par-dessus — cercle offset à gauche soustrait du disque
+        //    Le décalage fort vers la gauche = croissant blanc large à droite
+        //    Le croissant noir restant est mince et naturellement à gauche
+        val whiteMaskR  = r * 0.68f
+        val whiteMaskCx = cx - r * 0.38f  // fort décalage gauche → blanc large à droite
+        val whiteMaskCy = cy - r * 0.08f
+
+        val moonPath = Path().apply {
+            addOval(androidx.compose.ui.geometry.Rect(cx - innerR, cy - innerR, cx + innerR, cy + innerR))
+        }
+        val whiteMaskPath = Path().apply {
+            addOval(androidx.compose.ui.geometry.Rect(
+                whiteMaskCx - whiteMaskR, whiteMaskCy - whiteMaskR,
+                whiteMaskCx + whiteMaskR, whiteMaskCy + whiteMaskR
+            ))
+        }
+        val whiteCrescent = Path().apply {
+            op(moonPath, whiteMaskPath, androidx.compose.ui.graphics.PathOperation.Difference)
+        }
+        drawPath(whiteCrescent, Color.White)
 
         // ── Cristal asymétrique ───────────────────────────────────────────────
         val scale  = heartbeat.value

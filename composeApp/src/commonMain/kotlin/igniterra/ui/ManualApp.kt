@@ -179,6 +179,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         emblemClicks    = emblemClicks,
                         glitch = glitch,
                         scope = scope,
+                        translatorUnlocked = traducterUnlocked,
                         onEnableDungeon = {
                             dungeonVisible = true
                         },
@@ -253,7 +254,7 @@ private fun PortraitLayout(
                 // Header mobile avec bouton menu
                 PortraitHeader(selected, onToggle, onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, onEmblemClick = onEmblemClick,  onEnableDungeon = onEnableDungeon)
+                    ManualContent(selected, Modifier.fillMaxSize(), recipient, glitch = glitch, scope = scope, translatorUnlocked = traducterUnlocked, onEmblemClick = onEmblemClick,  onEnableDungeon = onEnableDungeon)
                 }
             }
         }
@@ -327,17 +328,19 @@ private fun PortraitHeader(selected: ManualSection, onMenuClick: () -> Unit,
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 @Composable
 private fun ManualSidebar(
-    selected       : ManualSection,
-    onSelect       : (ManualSection) -> Unit,
-    recipient: AppStrings.Recipient,
-    secretUnlocked : Boolean = false,
+    selected          : ManualSection,
+    onSelect          : (ManualSection) -> Unit,
+    recipient         : AppStrings.Recipient,
+    secretUnlocked    : Boolean = false,
     traducterUnlocked : Boolean,
-    onBadgeClick  : () -> Unit = {},
+    onBadgeClick      : () -> Unit = {},
 ) {
     var volume by remember { mutableStateOf(1f) }
     var muted  by remember { mutableStateOf(false) }
 
     Column(Modifier.width(220.dp).fillMaxHeight().background(Panel)) {
+
+        // Header fixe
         Column(Modifier.padding(18.dp)) {
             Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
             Spacer(Modifier.height(4.dp))
@@ -349,24 +352,29 @@ private fun ManualSidebar(
             Text(AppStrings.Header.docRef, fontSize = 8.sp, fontFamily = Mono, color = T3)
         }
         HRule()
-        ManualSection.entries.forEach { s ->
-            if (s == ManualSection.SECRET) return@forEach
-            if (s == ManualSection.TRADUCTER) return@forEach
-            SideNavItem(s, s == selected) { onSelect(s) }
-        }
-        if (secretUnlocked) {
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
-            SideNavItem(ManualSection.SECRET, selected == ManualSection.SECRET, accent = Red) {
-                onSelect(ManualSection.SECRET)
+
+        // Navigation scrollable
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            ManualSection.entries.forEach { s ->
+                if (s == ManualSection.SECRET) return@forEach
+                if (s == ManualSection.TRADUCTER) return@forEach
+                SideNavItem(s, s == selected) { onSelect(s) }
+            }
+            if (secretUnlocked) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+                SideNavItem(ManualSection.SECRET, selected == ManualSection.SECRET, accent = Red) {
+                    onSelect(ManualSection.SECRET)
+                }
+            }
+            if (traducterUnlocked) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+                SideNavItem(ManualSection.TRADUCTER, selected == ManualSection.TRADUCTER, accent = Red) {
+                    onSelect(ManualSection.TRADUCTER)
+                }
             }
         }
-        if(traducterUnlocked) {
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
-            SideNavItem(ManualSection.TRADUCTER, selected == ManualSection.TRADUCTER, accent = Red) {
-                onSelect(ManualSection.TRADUCTER)
-            }
-        }
-        Spacer(Modifier.weight(1f))
+
+        // Bas fixe — volume + badge
         HRule()
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(
@@ -376,74 +384,46 @@ private fun ManualSidebar(
             ) {
                 Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Bouton Play/Stop musique
                     var musicPlaying by remember { mutableStateOf(false) }
                     Box(
                         Modifier
                             .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
                             .clickable {
                                 CrackleSound.click()
-                                if (musicPlaying) {
-                                    CrackleSound.stopWav()
-                                } else {
-                                    recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
-                                }
+                                if (musicPlaying) CrackleSound.stopWav()
+                                else recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
                                 musicPlaying = !musicPlaying
                             }
                             .padding(horizontal = 6.dp, vertical = 3.dp)
                     ) {
-                        Text(
-                            if (musicPlaying) "STOP" else "PLAY",
-                            fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
-                            color = if (musicPlaying) Teal else T3
-                        )
+                        Text(if (musicPlaying) "STOP" else "PLAY", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (musicPlaying) Teal else T3)
                     }
                     Box(
                         Modifier
                             .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
-                            .clickable {
-                                muted = !muted
-                                CrackleSound.setVolume(if (muted) 0f else volume)
-                                CrackleSound.click()
-                            }
+                            .clickable { muted = !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click() }
                             .padding(horizontal = 6.dp, vertical = 3.dp)
                     ) {
-                        Text(
-                            if (muted) "MUET" else "ON",
-                            fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono,
-                            color = if (muted) Red.copy(alpha = 0.5f) else TealDk
-                        )
+                        Text(if (muted) "MUET" else "ON", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (muted) Red.copy(alpha = 0.5f) else TealDk)
                     }
                 }
             }
             Spacer(Modifier.height(4.dp))
             Slider(
                 value = if (muted) 0f else volume,
-                onValueChange = { v ->
-                    volume = v
-                    if (muted && v > 0f) muted = false
-                    CrackleSound.setVolume(v)
-                },
+                onValueChange = { v -> volume = v; if (muted && v > 0f) muted = false; CrackleSound.setVolume(v) },
                 modifier = Modifier.fillMaxWidth().height(24.dp),
-                colors = androidx.compose.material.SliderDefaults.colors(
-                    thumbColor         = Teal,
-                    activeTrackColor   = Teal,
-                    inactiveTrackColor = Bdr
-                )
+                colors = androidx.compose.material.SliderDefaults.colors(thumbColor = Teal, activeTrackColor = Teal, inactiveTrackColor = Bdr)
             )
         }
         HRule()
         Row(Modifier.padding(14.dp)) {
             Box(
-                Modifier
-                    .border(1.dp, GoldDk, RoundedCornerShape(2.dp))
+                Modifier.border(1.dp, GoldDk, RoundedCornerShape(2.dp))
                     .clickable { onBadgeClick() }
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
-                Text(
-                    AppStrings.Header.badge.uppercase(),
-                    fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = Gold
-                )
+                Text(AppStrings.Header.badge.uppercase(), fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = Gold)
             }
         }
     }
@@ -480,6 +460,7 @@ private fun ManualContent(
     modifier      : Modifier,
     recipient     : AppStrings.Recipient? = null,
     emblemClicks  : Int = 0,
+    translatorUnlocked: Boolean,
     glitch: GlitchEngine,
     scope: CoroutineScope,
     onEnableDungeon: () -> Unit,
@@ -499,7 +480,7 @@ private fun ManualContent(
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY     -> SafetySection()
                 ManualSection.LEGAL      -> LegalSection()
-                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope, onEnableDungeon)
+                ManualSection.SECRET     -> SecretSection(recipient,glitch, scope, translatorUnlocked = translatorUnlocked, onEnableDungeon = onEnableDungeon)
                 ManualSection.TRADUCTER ->  TraducterSection(recipient,glitch, scope)
             }
             Spacer(Modifier.height(28.dp))
@@ -1110,7 +1091,7 @@ fun EngravedText(
 }
 enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
 @Composable
-fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope, onEnableDungeon: () -> Unit ) {
+fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope, translatorUnlocked: Boolean, onEnableDungeon: () -> Unit ) {
 
 
     LaunchedEffect(Unit) {
@@ -1348,7 +1329,8 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
                         chunk.forEachIndexed { colIdx, codes ->
                             EngravedCodeColumn(
                                 codes = codes,
-                                modifier = Modifier.widthIn(min = 60.dp)
+                                modifier = Modifier.widthIn(min = 60.dp),
+                                translatorUnlocked = translatorUnlocked
                             )
                             if (colIdx < chunk.size - 1) {
                                 EngravedVerticalDivider()
@@ -1375,66 +1357,40 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
 fun EngravedCodeColumn(
     codes              : List<String>,
     modifier           : Modifier = Modifier,
-    translatorUnlocked : Boolean  = true
+    translatorUnlocked: Boolean
 ) {
+
     Column(
-        modifier                = modifier.padding(horizontal = 8.dp),
-        verticalArrangement     = Arrangement.spacedBy(6.dp),
-        horizontalAlignment     = Alignment.CenterHorizontally,
+        modifier            = modifier.padding(horizontal = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         codes.forEach { code ->
-            var showOverlay  by remember { mutableStateOf(false) }
-            val decodedChar  = remember(code) {
+            var translated by remember { mutableStateOf(false) }
+            val decoded = remember(code) {
                 ButtonLabelEncoder.decode(code)?.let { MagitekCipher.charAt(it) } ?: "?"
             }
 
-            Box(contentAlignment = Alignment.TopCenter) {
-                // Overlay du caractère décodé
-                if (showOverlay && translatorUnlocked) {
-                    Box(
-                        Modifier
-                            .offset(y = (-18).dp)
-                            .background(Red.copy(alpha = 0.9f))
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                            .zIndex(10f)
-                    ) {
-                        Text(
-                            decodedChar,
-                            fontSize   = 10.sp,
-                            fontFamily = Mono,
-                            color      = Color.White
-                        )
+            Text(
+                text          = if (translated) decoded else code,
+                fontSize      = 11.sp,
+                fontFamily    = Mono,
+                color         = if (translated) Teal else TealDk.copy(alpha = 0.7f),
+                letterSpacing = 2.sp,
+                textAlign     = TextAlign.Center,
+                modifier      = Modifier.pointerInput(translatorUnlocked) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (translatorUnlocked) {
+                                when (event.type) {
+                                    PointerEventType.Enter -> translated = true
+                                }
+                            }
+                        }
                     }
                 }
-
-                EngravedText(
-                    text          = code,
-                    fontSize      = 11.sp,
-                    letterSpacing = 2.sp,
-                    textAlign     = TextAlign.Center,
-                    modifier      = Modifier
-                        .then(
-                            if (translatorUnlocked) Modifier.pointerInput(code) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        when {
-                                            event.type == PointerEventType.Enter ||
-                                                    event.changes.any { it.pressed } -> {
-                                                showOverlay = true
-                                                CrackleSound.click()
-                                            }
-                                            event.type == PointerEventType.Exit ||
-                                                    event.changes.none { it.pressed } -> {
-                                                showOverlay = false
-                                            }
-                                        }
-                                    }
-                                }
-                            } else Modifier
-                        )
-                )
-            }
+            )
         }
     }
 }
