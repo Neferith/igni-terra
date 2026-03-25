@@ -1,6 +1,5 @@
 package igniterra.strings
 
-import androidx.compose.runtime.remember
 import igniterra.model.buildHiddenBackMessage
 
 object AppStrings {
@@ -15,9 +14,40 @@ object AppStrings {
         val musicFile      : String? = null  // null = pas de musique
     )
 
+
     val recipients = listOf(
         Recipient(
-            displayName = "Lothaire — Novice",
+            displayName = "Keryth - Samourai",
+            password    = "balfir",
+            note        = "Keryth,\n\n" +
+                    "Par-delà beffroi \n" +
+                    "son ouragan s'efface\n" +
+                    "l’oiseau s’envole\n\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "AFathersPride.mp3"
+        ),
+
+        Recipient(
+            displayName = "Winifred de Honeystone — Pupille Hauterive",
+            password    = "thepooh",
+            note        = "Winifred,\n" +
+                    "On ne se connaît pas vraiment, mais je vous assure que c’est un plaisir de vous avoir dans la compagnie.\n" +
+                    "Mon rôle au sein de cette compagnie est multiple, bien que je sois rarement présente en mission. Mon seul objectif est d’être utile quand c’est nécessaire.\n" +
+                    "L’Igni Terra n’est pas juste un lance-flamme, il est le résultat d’une fusion de deux esprits. Je n’aime pas les armes, je ne me plais pas à les utiliser, malheureusement je me plais à les concevoir.\n" +
+                    "Faites très attention lors de son usage, ce n’est pas un jouet.\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "ishgardAnthem8bits.mp3"
+        ),
+        Recipient(
+            displayName = "Galaad Chasten — Aventurier",
+            password    = "ultima",
+            note        = "Galaad,\n" +
+                    "Je compte sur votre grande expérience.\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "ultima8bits.mp3"
+        ),
+        Recipient(
+            displayName = "Lothaire — Novice parmi la Nouvelle Lune depuis le 23/12/2025",
             password    = "lotus",
             note        = "Lothaire,\n" +
                     "Déjà j’espère que tu vas bien. Ne pense pas que ta disparition ne m’a pas inquiété, mais, quelles que soient les raisons, je n’ai aucun doute sur tes convictions et ta volonté. Tu as la capacité de te sortir des pires situations.\n" +
@@ -36,7 +66,7 @@ object AppStrings {
                     "— Eleanor Dubrie\n" +
             "PS : J'ai un cadeau pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
             hasSecretAccess = true,
-            musicFile   = "HomeBeyondTheHorizon.mp3"
+            musicFile   = "garleananthem.mp3"
         ),
         Recipient(
             displayName = "Damian — Ingénieur de la Nouvelle Lune",

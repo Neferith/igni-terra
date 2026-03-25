@@ -43,9 +43,26 @@ object MagitekCipher {
         }
     }
 
+    private fun normalize(text: String): String =
+        text
+            .replace("é", "e").replace("è", "e").replace("ê", "e").replace("ë", "e")
+            .replace("à", "a").replace("â", "a").replace("ä", "a")
+            .replace("ù", "u").replace("û", "u").replace("ü", "u")
+            .replace("î", "i").replace("ï", "i")
+            .replace("ô", "o").replace("ö", "o")
+            .replace("ç", "c")
+            .replace("É", "E").replace("È", "E").replace("Ê", "E")
+            .replace("À", "A").replace("Â", "A")
+            .replace("Ù", "U").replace("Û", "U")
+            .replace("Î", "I").replace("Ô", "O")
+            .replace("Ç", "C")
+            .replace("«", "").replace("»", "")
+            .replace("'", "'")  // apostrophe typographique → ASCII
+            .replace("'", "'")
+
     /** Encode un texte en liste de codes 3 lettres */
     fun encode(text: String): List<String> =
-        text.uppercase().mapNotNull { c -> charToIndex(c) }
+        normalize(text).uppercase().mapNotNull { c -> charToIndex(c) }
             .map { ButtonLabelEncoder.encode(it) }
 
     /** Décode une liste de codes en texte */

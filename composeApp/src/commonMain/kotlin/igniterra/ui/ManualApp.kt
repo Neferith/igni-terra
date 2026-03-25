@@ -14,8 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -26,15 +25,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import igniterra.CrackleSound
+import igniterra.model.ButtonLabelEncoder
+import igniterra.model.MagitekCipher
 import igniterra.model.buildHiddenBackMessage
 import igniterra.strings.AppStrings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.random.Random
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -44,7 +43,7 @@ public val Card    = Color(0xFF0E2040)
 val Teal    = Color(0xFF38C4C4)
 val TealDk  = Color(0xFF1C7070)
 private val Gold    = Color(0xFFC8A44A)
-private val GoldDk  = Color(0xFF7A6028)
+val GoldDk  = Color(0xFF7A6028)
 val T1      = Color(0xFFD6EDF6)
 val T2      = Color(0xFF6EA8C0)
 public val T3      = Color(0xFF365470)
@@ -528,7 +527,7 @@ private fun ManualContent(
 private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick: () -> Unit = {}, onBadgeClick: () -> Unit = {}) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
-        HexEmblem(Modifier.size(80.dp).clickable { onEmblemClick() })
+        NouvelLuneLogo(Modifier.size(80.dp).clickable { onEmblemClick() })
         Spacer(Modifier.height(22.dp))
         Text(AppStrings.Header.organization, fontSize = 9.sp, letterSpacing = 3.sp, color = T3)
         Spacer(Modifier.height(10.dp))
@@ -582,7 +581,7 @@ private fun CoverSection(recipient: AppStrings.Recipient? = null, onEmblemClick:
     }
 }
 
-@Composable
+/*@Composable
 private fun HexEmblem(modifier: Modifier) {
     Canvas(modifier) {
         val cx = size.width / 2f
@@ -612,7 +611,8 @@ private fun HexEmblem(modifier: Modifier) {
             )
         }
     }
-}
+}*/
+
 
 @Composable
 private fun CoverMetaCell(label: String, value: String, modifier: Modifier) {
@@ -1131,7 +1131,8 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
     var loaderProgress by remember { mutableStateOf(0f) }
 
     LaunchedEffect(Unit) {
-        recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+       // recipient?.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        CrackleSound.playWav("HomeBeyondTheHorizon.mp3", true)
 
         // ── Eleanor ───────────────────────────────────────────────────────────
         phase = SecretPhase.ELEANOR
@@ -1371,21 +1372,69 @@ fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope:
 }
 
 @Composable
-fun EngravedCodeColumn(codes: List<String>, modifier: Modifier = Modifier) {
+fun EngravedCodeColumn(
+    codes              : List<String>,
+    modifier           : Modifier = Modifier,
+    translatorUnlocked : Boolean  = true
+) {
     Column(
         modifier                = modifier.padding(horizontal = 8.dp),
         verticalArrangement     = Arrangement.spacedBy(6.dp),
         horizontalAlignment     = Alignment.CenterHorizontally,
     ) {
         codes.forEach { code ->
-            EngravedText(
-                text          = code,
-                fontSize      = 11.sp,
-                letterSpacing = 2.sp,
-                textAlign     = TextAlign.Center,
-            )
+            var showOverlay  by remember { mutableStateOf(false) }
+            val decodedChar  = remember(code) {
+                ButtonLabelEncoder.decode(code)?.let { MagitekCipher.charAt(it) } ?: "?"
+            }
+
+            Box(contentAlignment = Alignment.TopCenter) {
+                // Overlay du caractère décodé
+                if (showOverlay && translatorUnlocked) {
+                    Box(
+                        Modifier
+                            .offset(y = (-18).dp)
+                            .background(Red.copy(alpha = 0.9f))
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                            .zIndex(10f)
+                    ) {
+                        Text(
+                            decodedChar,
+                            fontSize   = 10.sp,
+                            fontFamily = Mono,
+                            color      = Color.White
+                        )
+                    }
+                }
+
+                EngravedText(
+                    text          = code,
+                    fontSize      = 11.sp,
+                    letterSpacing = 2.sp,
+                    textAlign     = TextAlign.Center,
+                    modifier      = Modifier
+                        .then(
+                            if (translatorUnlocked) Modifier.pointerInput(code) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        when {
+                                            event.type == PointerEventType.Enter ||
+                                                    event.changes.any { it.pressed } -> {
+                                                showOverlay = true
+                                                CrackleSound.click()
+                                            }
+                                            event.type == PointerEventType.Exit ||
+                                                    event.changes.none { it.pressed } -> {
+                                                showOverlay = false
+                                            }
+                                        }
+                                    }
+                                }
+                            } else Modifier
+                        )
+                )
+            }
         }
     }
-
-
 }
