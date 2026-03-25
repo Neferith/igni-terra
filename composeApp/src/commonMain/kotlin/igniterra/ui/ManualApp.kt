@@ -372,42 +372,44 @@ private fun ManualSidebar(
                     onSelect(ManualSection.TRADUCTER)
                 }
             }
+
+            HRule()
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        var musicPlaying by remember { mutableStateOf(false) }
+                        Box(
+                            Modifier
+                                .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
+                                .clickable {
+                                    CrackleSound.click()
+                                    if (musicPlaying) CrackleSound.stopWav()
+                                    else recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+                                    musicPlaying = !musicPlaying
+                                }
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        ) {
+                            Text(if (musicPlaying) "STOP" else "PLAY", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (musicPlaying) Teal else T3)
+                        }
+                        Box(
+                            Modifier
+                                .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
+                                .clickable { muted = !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click() }
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        ) {
+                            Text(if (muted) "MUET" else "ON", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (muted) Red.copy(alpha = 0.5f) else TealDk)
+                        }
+                    }
+                }
         }
 
         // Bas fixe — volume + badge
-        HRule()
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    var musicPlaying by remember { mutableStateOf(false) }
-                    Box(
-                        Modifier
-                            .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
-                            .clickable {
-                                CrackleSound.click()
-                                if (musicPlaying) CrackleSound.stopWav()
-                                else recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
-                                musicPlaying = !musicPlaying
-                            }
-                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                    ) {
-                        Text(if (musicPlaying) "STOP" else "PLAY", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (musicPlaying) Teal else T3)
-                    }
-                    Box(
-                        Modifier
-                            .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
-                            .clickable { muted = !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click() }
-                            .padding(horizontal = 6.dp, vertical = 3.dp)
-                    ) {
-                        Text(if (muted) "MUET" else "ON", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = if (muted) Red.copy(alpha = 0.5f) else TealDk)
-                    }
-                }
-            }
+
             Spacer(Modifier.height(4.dp))
             Slider(
                 value = if (muted) 0f else volume,
@@ -1091,7 +1093,12 @@ fun EngravedText(
 }
 enum class SecretPhase { ELEANOR, GLITCH, LOGO, DECIMUS, CIPHER }
 @Composable
-fun SecretSection(recipient: AppStrings.Recipient?, glitch: GlitchEngine, scope: CoroutineScope, translatorUnlocked: Boolean, onEnableDungeon: () -> Unit ) {
+fun SecretSection(
+    recipient: AppStrings.Recipient?,
+    glitch: GlitchEngine,
+    scope: CoroutineScope,
+    translatorUnlocked: Boolean,
+    onEnableDungeon: () -> Unit ) {
 
 
     LaunchedEffect(Unit) {
