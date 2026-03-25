@@ -66,7 +66,7 @@ object AppStrings {
                     "Mais mon cœur reste raison.\n" +
                     "À nous l'avenir.\n\n" +
                     "— Eleanor Dubrie\n" +
-            "PS : J'ai un cadeau pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
+            "PS : J'ai une surprise pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
             hasSecretAccess = true,
             musicFile   = "garleananthem.mp3"
         ),
