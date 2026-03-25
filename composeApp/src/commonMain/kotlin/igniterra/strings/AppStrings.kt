@@ -30,35 +30,37 @@ object AppStrings {
         Recipient(
             displayName = "Winifred de Honeystone — Pupille Hauterive",
             password    = "thepooh",
-            note        = "Winifred,\n" +
+            note        = "Winifred,\n\n" +
                     "On ne se connaît pas vraiment, mais je vous assure que c’est un plaisir de vous avoir dans la compagnie.\n" +
                     "Mon rôle au sein de cette compagnie est multiple, bien que je sois rarement présente en mission. Mon seul objectif est d’être utile quand c’est nécessaire.\n" +
                     "L’Igni Terra n’est pas juste un lance-flamme, il est le résultat d’une fusion de deux esprits. Je n’aime pas les armes, je ne me plais pas à les utiliser, malheureusement je me plais à les concevoir.\n" +
-                    "Faites très attention lors de son usage, ce n’est pas un jouet.\n" +
+                    "Faites très attention lors de son usage, ce n’est pas un jouet.\n\n" +
                     "— Eleanor Dubrie",
             musicFile = "ishgardAnthem8bits.mp3"
         ),
         Recipient(
             displayName = "Galaad Chasten — Aventurier",
             password    = "ultima",
-            note        = "Galaad,\n" +
-                    "Je compte sur votre grande expérience.\n" +
+            note        = "Galaad,\n\n" +
+                    "Je compte sur votre grande expérience.\n\n" +
                     "— Eleanor Dubrie",
             musicFile = "ultima8bits.mp3"
         ),
         Recipient(
             displayName = "Lothaire — Novice parmi la Nouvelle Lune depuis le 23/12/2025",
             password    = "lotus",
-            note        = "Lothaire,\n" +
+            note        = "Lothaire,\n\n" +
                     "Déjà j’espère que tu vas bien. Ne pense pas que ta disparition ne m’a pas inquiété, mais, quelles que soient les raisons, je n’ai aucun doute sur tes convictions et ta volonté. Tu as la capacité de te sortir des pires situations.\n" +
-                    "Maintenant, pour ce qui est de l’Igni Terra, je te prie d’en faire un usage modéré. Avec Damian, nous l’avons pensé comme un outil servant à calciner le mal, mais il peut être à double tranchant. Une arme reste une arme. Plus elle est puissante, plus elle doit être utilisée avec parcimonie.\n" +
+                    "Maintenant, pour ce qui est de l’Igni Terra, je te prie d’en faire un usage modéré." +
+                    " Avec Damian, nous l’avons pensé comme un outil servant à calciner le mal, mais il peut être à double tranchant." +
+                    " Une arme reste une arme. Plus elle est puissante, plus elle doit être utilisée avec parcimonie.\n\n" +
                     "— Eleanor Dubrie",
             musicFile = "ishgardAnthem8bits.mp3"
         ),
         Recipient(
             displayName = "Adrila — Officière de la Nouvelle Lune",
             password    = "adrenaline",
-            note        = "Mon amour,\n" +
+            note        = "Mon amour,\n\n" +
                     "J’espère que tu apprécies tous les efforts que je fais pour la Compagnie. C’est aussi un cadeau pour toi.\n\n" +
                     "Mon corps est passion.\n" +
                     "Mais mon cœur reste raison.\n" +
@@ -71,9 +73,9 @@ object AppStrings {
         Recipient(
             displayName = "Damian — Ingénieur de la Nouvelle Lune",
             password    = "GardienG",
-            note        = "Damian,\n" +
+            note        = "Damian,\n\n" +
                     "J’espère que notre arme sera bien utilisée. Le défi de créer une telle arme m’excite au plus haut point, mais la seule idée de son usage m’effraie.\n" +
-                    "Je crois que je ne suis pas normal…\n" +
+                    "Je crois que je ne suis pas normal…\n\n" +
                     "— Eleanor Dubrie",
             hasSecretAccess = false,
             musicFile = "TheEwerBrimmeth8bit.mp3"
@@ -81,24 +83,29 @@ object AppStrings {
         Recipient(
             displayName = "Alyx — Occultiste",
             password    = "akala",
-            note        = "Alyx,\n" +
+            note        = "Alyx,\n\n" +
                     "Je n’ai pas encore eu le plaisir de discourir avec vous, même si à l’occasion ce sera avec plaisir.\n" +
-                    "L'Igni Terra n'est pas une arme ordinaire. Elle est surtout très dangereuse. Faites attention avec.\n" +
-                    "— Eleanor Dubrie\n"
+                    "L'Igni Terra n'est pas une arme ordinaire. Elle est surtout très dangereuse. Faites attention avec.\n\n" +
+                    "— Eleanor Dubrie\n",
+            musicFile = "endwalker8bits.mp3"
         ),
         Recipient(
             displayName = "Wellan — Chasseur",
             password    = "piegeachocobo",
-            note        = "Wellan,\n" +
-                    "Je me souviens encore de l’échec de notre piège avec le chocobo rouge. Mais l’Igni Terra ne se retournera pas contre nous, si nous respectons les règles de sécurité.\n" +
-                    "— Eleanor Dubrie\n"
+            note        = "Wellan,\n\n" +
+                    "Je me souviens encore de l’échec de notre piège avec le chocobo rouge. " +
+                    "Mais l’Igni Terra ne se retournera pas contre nous, si nous respectons les règles de sécurité.\n\n" +
+                    "— Eleanor Dubrie\n",
+            musicFile = "endwalker8bits.mp3"
         ),
         Recipient(
             displayName = "Kalyra — Pictomancienne",
             password    = "bravoure",
-            note        = "Kalyra,\n" +
-                    "Je sais que vous êtes une artiste et nous voilà avec un outil qui est loin de faire dans la dentelle. Ce manuel doit vous aider à l’utiliser dans de bonnes conditions.\n" +
-                    "— Eleanor Dubrie\n"
+            note        = "Kalyra,\n\n" +
+                    "Je sais que vous êtes une artiste et nous voilà avec un outil qui est loin de faire dans la dentelle." +
+                    " Ce manuel doit vous aider à l’utiliser dans de bonnes conditions.\n\n" +
+                    "— Eleanor Dubrie\n",
+            musicFile = "endwalker8bits.mp3"
         ),
     )
 

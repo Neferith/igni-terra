@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
@@ -60,7 +62,14 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                     )
                 }
                 if (expanded) {
-                    Column(Modifier.fillMaxWidth().border(1.dp, Bdr).background(Card)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .border(1.dp, Bdr)
+                            .background(Card)
+                            .verticalScroll(rememberScrollState())
+                    ) {
                         AppStrings.recipients.forEach { r ->
                             Box(
                                 Modifier.fillMaxWidth()
