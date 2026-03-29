@@ -17,6 +17,20 @@ object AppStrings {
 
     val recipients = listOf(
         Recipient(
+            displayName = "Aurèle - Officière de la Nouvelle Lune",
+            password    = "viera_fatale",
+            note        = "Aurele,\n\n" +
+                    "Je suis prise d’un affreux doute, car j’ai l’intime persuasion que l’Igni Terra pourrait être très mal utilisé à l’avenir." +
+                    " Ma plus grande peur serait de carboniser d’innocentes victimes, suite à un excès de zèle.\n" +
+                    "J’avais rédigé des conditions d’usage que j’ai partagées avec Adrila, elle les a acceptées sans discuter, " +
+                    "mais j’ignore si elle a eu le temps de les partager avec l’ensemble des officiers de la compagnie.\n" +
+                    "Si tel n’est pas le cas, voilà un début de réparation. Mettez-vous bien à l’aise pour étudier ce document. " +
+                    "Vous pouvez appuyer sur play pour écouter de la musique, cela vous aidera à vous détendre durant la lecture. Lorsque vous en aurez terminé, " +
+                    "vous pouvez cliquer cinq fois sur la référence du document en bas de l’écran.\n\n\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "kalenda_maya.mp3"
+        ),
+        Recipient(
             displayName = "Keryth - Samourai",
             password    = "balfir",
             note        = "Keryth,\n\n" +
@@ -242,7 +256,7 @@ object AppStrings {
     object S04 {
         const val num   = "04"
         const val title = "Modes de Tir"
-        const val intro = "Différents modes de tir, pour plus de polyvalence."
+        const val intro = "Différents modes de tir, pour plus de polyvalence. Avant tout usage, il est très IMPORTANT de commencer par le mode α. L'appareil doit monter progressivement en puissance."
 
         object Alpha {
             const val code     = "MODE α"
@@ -288,6 +302,7 @@ object AppStrings {
         }
 
         val checklist = listOf(
+            "Remettre systématiquement la sécurité entre deux utilisations, même écartées d'une trentaine de secondes.",
             "Combinaison ignifugée intégrale portée par l'opérateur lors de l'apprentissage. Non nécessaire en mission.",
             "Dissipateur thermique installé et vérifié.",
             "Zone dégagée sur au moins 20 yalms dans la direction de tir.",
