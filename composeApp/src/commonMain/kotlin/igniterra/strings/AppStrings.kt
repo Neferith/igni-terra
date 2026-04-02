@@ -17,6 +17,30 @@ object AppStrings {
 
     val recipients = listOf(
         Recipient(
+            displayName = "Roderick, duelliste, maître du chocolat et des tomates",
+            password    = "chocolat",
+            note        = "Roderick,\n\n" +
+                    " Il faudra que je vous explique ma nouvelle recette de salade au brie pané, noisette grillées et aux tomates cerises.\n\n\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "ishgardAnthem8bits.mp3"
+        ),
+        Recipient(
+            displayName = "Lehalia, medecin de la nouvelle lune",
+            password    = "analgesie",
+            note        = "Lehalia,\n\n" +
+                    "Ne vous brulez pas surtout.\n\n\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "ishgardAnthem8bits.mp3"
+        ),
+        Recipient(
+            displayName = "Celia, novice",
+            password    = "sniper",
+            note        = "Celia,\n\n" +
+                    "Faites très attention avec l'Igni Terra, c'est plus dangereux qu'un fusil.\n\n\n" +
+                    "— Eleanor Dubrie",
+            musicFile = "TheEwerBrimmeth8bit.mp3"
+        ),
+        Recipient(
             displayName = "Aurèle - Officière de la Nouvelle Lune",
             password    = "viera_fatale",
             note        = "Aurele,\n\n" +
