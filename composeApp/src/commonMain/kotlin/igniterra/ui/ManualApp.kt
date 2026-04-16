@@ -85,7 +85,16 @@ fun ManualApp() {
         return
     }
 
-    ManualContent_Internal(recipient!!)
+    if (recipient != null && recipient!!.hasGameAccess) {
+        ShooterFullScreen(
+            recipient = recipient!!,
+            onQuit = { recipient = null }
+        )
+
+    } else {
+
+        ManualContent_Internal(recipient!!)
+    }
 }
 
 @Composable
@@ -194,7 +203,6 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                                 if (emblemClicks >= 5) {
                                     secretUnlocked = true
                                     emblemClicks = 0
-
                                     CrackleSound.unlockSecret()
                                 }
                             }
@@ -208,6 +216,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                             }
                         }
                     )
+
                 }
             }
             GlitchOverlay(glitch)

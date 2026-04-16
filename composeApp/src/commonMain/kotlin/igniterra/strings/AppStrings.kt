@@ -9,7 +9,7 @@ object AppStrings {
         val displayName : String,
         val password    : String,
         val note        : String,
-
+        val hasGameAccess  : Boolean = false,
         val hasSecretAccess: Boolean = false,
         val musicFile      : String? = null  // null = pas de musique
     )
@@ -106,6 +106,7 @@ object AppStrings {
                     "— Eleanor Dubrie\n" +
             "PS : J'ai une surprise pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
             hasSecretAccess = true,
+            hasGameAccess = true,
             musicFile   = "garleananthem.mp3"
         ),
         Recipient(

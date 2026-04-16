@@ -26,7 +26,8 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
     var password          by remember { mutableStateOf("") }
     var error             by remember { mutableStateOf(false) }
     var expanded          by remember { mutableStateOf(false) }
- 
+
+    var errorMessage by remember { mutableStateOf<String>("Code incorrect.") }
     Box(
         Modifier.fillMaxSize().background(Bg),
         contentAlignment = Alignment.Center
@@ -108,7 +109,7 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                         modifier = Modifier.fillMaxWidth()
                     )
                     if (error) {
-                        Text("Code incorrect.", fontSize = 9.sp, color = Red, letterSpacing = 1.sp)
+                        Text(errorMessage, fontSize = 9.sp, color = Red, letterSpacing = 1.sp)
                     }
  
                     // Bouton valider

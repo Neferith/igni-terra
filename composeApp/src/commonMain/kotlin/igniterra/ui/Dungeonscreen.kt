@@ -53,8 +53,14 @@ fun DungeonOverlay(traducterMode: Boolean, onFoundTraducter: () -> Unit,onDismis
 
     var fpsMode by remember { mutableStateOf(false) }
 
+    var shooterMode by remember { mutableStateOf(false) }
+
     if (fpsMode) {
         FpsView(game = game, onClose = { fpsMode = false })
+        return
+    }
+    if (shooterMode) {
+        ShooterOverlay(onDismiss = { shooterMode = false })
         return
     }
 
@@ -73,7 +79,7 @@ fun DungeonOverlay(traducterMode: Boolean, onFoundTraducter: () -> Unit,onDismis
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
-            DungeonHeader(game, onDismiss, { fpsMode = it })
+            DungeonHeader(game, onDismiss, { fpsMode = it }, onShooterMode = { shooterMode = it })
             Box(Modifier.fillMaxWidth().height(1.dp).background(DBdr))
 
             // Corps : carte + stats
@@ -114,7 +120,7 @@ fun DungeonOverlay(traducterMode: Boolean, onFoundTraducter: () -> Unit,onDismis
 
 // ── Header ────────────────────────────────────────────────────────────────────
 @Composable
-private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit, onFpsMode: (Boolean) -> Unit) {
+private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit, onFpsMode: (Boolean) -> Unit, onShooterMode: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().background(DPanel).padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -128,6 +134,8 @@ private fun DungeonHeader(game: DungeonGame, onDismiss: () -> Unit, onFpsMode: (
             if (!game.alive || game.won) {
                 DungeonBtn("REJOUER", DRed) { game.newGame() }
             }
+
+            DungeonBtn("IGNI", DRed) { CrackleSound.click(); onShooterMode(true)}
             DungeonBtn("FPS", DTeal) { CrackleSound.click(); onFpsMode(true) }
             DungeonBtn(
                 if (game.demoMode) "DEMO ON" else "DEMO",
