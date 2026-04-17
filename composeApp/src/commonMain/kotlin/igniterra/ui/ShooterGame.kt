@@ -39,6 +39,23 @@ data class Bullet(
 
 data class Explosion(val x: Float, val y: Float, var frames: Int = 8)
 
+data class Missile(
+    val id   : Int,
+    var x    : Float,
+    var y    : Float,
+    val dirY : Float,  // direction verticale (-1 haut, +1 bas, 0 droit)
+    var alive: Boolean = true
+)
+
+data class FinalBoss(
+    var hp       : Int   = 60,
+    var x        : Float = 0.88f,
+    var y        : Float = 0.5f,
+    var alive    : Boolean = true,
+    var hitFlash : Int   = 0,
+    var phase    : Int   = 0   // 0=normal, 1=enragé (hp<30)
+)
+
 data class Civilian(
     var x       : Float = 1.05f,
     val y       : Float,
@@ -60,6 +77,8 @@ class ShooterGame {
 
     val zombies    = mutableListOf<Zombie>()
     val civilians  = mutableListOf<Civilian>()
+    val missiles   = mutableListOf<Missile>()
+    var finalBoss  : FinalBoss? = null
     val bullets    = mutableListOf<Bullet>()
     val explosions = mutableListOf<Explosion>()
 
@@ -157,7 +176,18 @@ class ShooterGame {
 
         // Vague suivante
         if (spawnQueue.isEmpty() && zombies.none { it.alive }) {
-            if (wave >= WAVES.size) {
+            if (wave == WAVES.size && finalBoss == null) {
+                val nextWave = wave
+                scope.launch {
+                    message = "LE LÉGAT SUPRÊME ARRIVE..."
+                    delay(2000L)
+                    wave = WAVES.size + 1
+                    message = "VAGUE FINALE"
+                    finalBoss = FinalBoss()
+                }
+                return
+            }
+            if (wave > WAVES.size && finalBoss?.alive == false) {
                 won = true; message = "VICTOIRE !"
             } else {
                 val nextWave = wave
@@ -210,6 +240,67 @@ class ShooterGame {
                 }
             }
         }
+
+        // Final Boss
+        finalBoss?.let { boss ->
+            if (!boss.alive) return@let
+
+            if (boss.hitFlash > 0) boss.hitFlash--
+
+            // Phase enragée si PV < 30
+            boss.phase = if (boss.hp < 30) 1 else 0
+
+            // Oscillation verticale
+            boss.y += ((if (boss.phase == 0) 0.004f else 0.007f) * kotlin.math.sin(tickCount * 0.05)).toFloat()
+
+            // Tir de missiles
+            val fireRate = if (boss.phase == 0) 0.015f else 0.030f
+            if (rng.nextFloat() < fireRate) {
+                val targetY = this.playerY
+                val dy = (targetY - boss.y).coerceIn(-0.5f, 0.5f)
+                missiles.add(Missile(id = nextId++, x = boss.x - 0.05f, y = boss.y, dirY = dy * 0.8f))
+            }
+
+            // Lance une petite fille (phase enragée)
+            if (boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
+                civilians.add(Civilian(x = boss.x - 0.05f, y = boss.y + (rng.nextFloat() - 0.5f) * 0.2f))
+                message = "⚠ IL LANCE UNE ENFANT !"
+            }
+
+            // Collision balles joueur → boss
+            bullets.filter { it.alive }.forEach { b ->
+                if (b.alive && b.x > boss.x - 0.08f && abs(b.y - boss.y) < 0.12f) {
+                    b.alive = false
+                    boss.hp -= 1
+                    boss.hitFlash = 4
+                    if (boss.hp <= 0) {
+                        boss.alive = false
+                        score += 500
+                        message = "LÉGAT SUPRÊME VAINCU ! +500"
+                        explosions.add(Explosion(boss.x, boss.y))
+                        explosions.add(Explosion(boss.x - 0.05f, boss.y - 0.05f))
+                        explosions.add(Explosion(boss.x + 0.05f, boss.y + 0.05f))
+                    }
+                }
+            }
+        }
+
+        // Missiles
+        val deadMissiles = mutableListOf<Missile>()
+        missiles.forEach { m ->
+            if (!m.alive) { deadMissiles.add(m); return@forEach }
+            m.x -= 0.018f
+            m.y += m.dirY * 0.02f
+            if (m.x < 0f || m.y < 0f || m.y > 1f) { m.alive = false; return@forEach }
+            // Touche le joueur
+            if (abs(m.x - 0.08f) < 0.05f && abs(m.y - playerY) < 0.05f) {
+                m.alive = false
+                lives = (lives - 1).coerceAtLeast(0)
+                explosions.add(Explosion(m.x, m.y))
+                if (lives <= 0) { alive = false; message = "GAME OVER" }
+            }
+        }
+        deadMissiles.forEach { missiles.remove(it) }
 
         tickCount++
     }

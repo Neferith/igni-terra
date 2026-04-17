@@ -306,6 +306,76 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         }
     }
 
+    // Missiles
+    game.missiles.filter { it.alive }.forEach { m ->
+        val mx = m.x * w; val my = m.y * h
+        // Fusée allongée
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(mx + 12f, my)
+            lineTo(mx, my - 4f)
+            lineTo(mx - 4f, my)
+            lineTo(mx, my + 4f)
+            close()
+        }
+        drawPath(path, Color(0xFFFF6B00))
+        drawPath(path, Color(0xFFFFAA00), style = Stroke(1f))
+        // Flamme arrière
+        drawLine(Color(0xFFFFD700).copy(alpha = 0.7f), Offset(mx - 4f, my), Offset(mx - 12f, my), 2f)
+    }
+
+    // Boss final
+    game.finalBoss?.let { boss ->
+        if (!boss.alive) return@let
+        val bx = boss.x * w; val by = boss.y * h
+        val color = if (boss.hitFlash > 0) Color.White
+        else if (boss.phase == 1) Color(0xFFFF2200) else Color(0xFF8B0000)
+        val sz = 40f
+
+        // Corps massif irrégulier
+        val bodyPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(bx - sz * 0.4f, by - sz * 0.8f)
+            lineTo(bx + sz * 0.5f, by - sz * 0.6f)
+            lineTo(bx + sz * 0.6f, by)
+            lineTo(bx + sz * 0.5f, by + sz * 0.6f)
+            lineTo(bx - sz * 0.3f, by + sz * 0.8f)
+            lineTo(bx - sz * 0.6f, by + sz * 0.3f)
+            lineTo(bx - sz * 0.6f, by - sz * 0.3f)
+            close()
+        }
+        drawPath(bodyPath, color.copy(alpha = 0.3f))
+        drawPath(bodyPath, color, style = Stroke(3f))
+
+        // Yeux rouges menaçants
+        drawCircle(Color(0xFFFF0000), 6f, Offset(bx - 10f, by - 10f))
+        drawCircle(Color(0xFFFF0000), 6f, Offset(bx + 10f, by - 10f))
+        drawCircle(Color.White, 2f, Offset(bx - 10f, by - 10f))
+        drawCircle(Color.White, 2f, Offset(bx + 10f, by - 10f))
+
+        // Bouche grimaçante
+        val mouthPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(bx - 12f, by + 8f)
+            lineTo(bx - 6f,  by + 14f)
+            lineTo(bx,       by + 8f)
+            lineTo(bx + 6f,  by + 14f)
+            lineTo(bx + 12f, by + 8f)
+        }
+        drawPath(mouthPath, Color(0xFFFF4444), style = Stroke(2f))
+
+        // Cornes
+        drawLine(color, Offset(bx - 15f, by - sz * 0.8f), Offset(bx - 20f, by - sz * 1.1f), 3f)
+        drawLine(color, Offset(bx + 15f, by - sz * 0.8f), Offset(bx + 20f, by - sz * 1.1f), 3f)
+
+        // Barre de vie boss
+        val barW = 80f
+        val hpR  = boss.hp.toFloat() / 60f
+        drawRect(Color(0xFF1A1A1A), Offset(bx - barW/2, by - sz - 20f), Size(barW, 6f))
+        drawRect(if (hpR > 0.5f) Color(0xFFFF4444) else Color(0xFFFF0000),
+            Offset(bx - barW/2, by - sz - 20f), Size(barW * hpR, 6f))
+        // Label
+        drawRect(Color(0xFF8B0000).copy(alpha = 0.6f),
+            Offset(bx - barW/2 - 2f, by - sz - 30f), Size(barW + 4f, 12f))
+    }
+
     // Petite fille
     game.civilians.filter { it.alive && !it.saved }.forEach { c ->
         val cx = c.x * w
