@@ -306,21 +306,46 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         }
     }
 
-    // Civiles
+    // Petite fille
     game.civilians.filter { it.alive && !it.saved }.forEach { c ->
         val cx = c.x * w
         val cy = c.y * h
-        val color = Color(0xFFFFB3C6)
-        drawCircle(color, 5f, Offset(cx, cy - 8f))
-        drawLine(color, Offset(cx, cy - 3f), Offset(cx, cy + 8f), 2f)
-        drawLine(color, Offset(cx - 5f, cy + 2f), Offset(cx + 5f, cy + 2f), 1.5f)
-        drawLine(color, Offset(cx, cy + 8f), Offset(cx - 4f, cy + 16f), 1.5f)
-        drawLine(color, Offset(cx, cy + 8f), Offset(cx + 4f, cy + 16f), 1.5f)
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(cx, cy + 3f); lineTo(cx - 6f, cy + 12f); lineTo(cx + 6f, cy + 12f); close()
+        val skin  = Color(0xFFFFD5B0)
+        val dress = Color(0xFFFF80AB)
+        val hair  = Color(0xFF8B4513)
+
+        // Nattes — deux petits cercles de chaque côté de la tête
+        drawCircle(hair, 3f, Offset(cx - 6f, cy - 12f))
+        drawCircle(hair, 3f, Offset(cx + 6f, cy - 12f))
+        // Tête — plus grosse proportionnellement (enfant)
+        drawCircle(skin, 7f, Offset(cx, cy - 10f))
+        drawCircle(hair, 7f, Offset(cx, cy - 14f))  // cheveux sur le dessus
+        // Yeux
+        drawCircle(Color(0xFF333333), 1f, Offset(cx - 2.5f, cy - 11f))
+        drawCircle(Color(0xFF333333), 1f, Offset(cx + 2.5f, cy - 11f))
+        // Corps court
+        drawLine(skin, Offset(cx, cy - 3f), Offset(cx, cy + 4f), 2.5f)
+        // Petits bras levés (enfant qui court)
+        drawLine(skin, Offset(cx, cy - 1f), Offset(cx - 6f, cy - 5f), 1.5f)
+        drawLine(skin, Offset(cx, cy - 1f), Offset(cx + 6f, cy - 5f), 1.5f)
+        // Robe évasée
+        val robe = androidx.compose.ui.graphics.Path().apply {
+            moveTo(cx - 2f, cy - 2f)
+            lineTo(cx - 8f, cy + 7f)
+            lineTo(cx + 8f, cy + 7f)
+            lineTo(cx + 2f, cy - 2f)
+            close()
         }
-        drawPath(path, color.copy(alpha = 0.4f))
-        drawCircle(Color(0xFFFFD700).copy(alpha = 0.8f), 3f, Offset(cx, cy - 18f))
+        drawPath(robe, dress)
+        drawPath(robe, dress.copy(alpha = 0.6f), style = Stroke(1f))
+        // Petites jambes
+        drawLine(skin, Offset(cx - 2f, cy + 7f), Offset(cx - 4f, cy + 14f), 1.5f)
+        drawLine(skin, Offset(cx + 2f, cy + 7f), Offset(cx + 4f, cy + 14f), 1.5f)
+        // Petites chaussures
+        drawCircle(Color(0xFF333333), 2f, Offset(cx - 4f, cy + 15f))
+        drawCircle(Color(0xFF333333), 2f, Offset(cx + 4f, cy + 15f))
+        // Indicateur ⚠ pulsant
+        drawCircle(Color(0xFFFFD700).copy(alpha = 0.9f), 3f, Offset(cx, cy - 22f))
     }
 
     // Explosions
