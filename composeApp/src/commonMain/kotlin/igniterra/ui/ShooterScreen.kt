@@ -114,7 +114,13 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 ShooterHud("VAGUE", "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "♥".repeat(game.lives.coerceAtLeast(0)).padEnd(3, '♡'))
-                Text("↑↓ DÉPLACER  ·  ESPACE TIRER", fontSize = 7.sp, fontFamily = SMono, color = ST3)
+                ShooterHud("IGNI", when (game.igniLevel) {
+                    0 -> "${game.igniParts}/5 → α"
+                    1 -> "α | ${game.igniParts}/5 → β"
+                    2 -> "β | ${game.igniParts}/5 → γ"
+                    else -> "γ MAX 🔥"
+                })
+                Text("CLIC TIRER  ·  LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
                 if (game.message.isNotEmpty()) {
                     Text(game.message, fontSize = 9.sp, fontFamily = SMono, letterSpacing = 2.sp,
                         color = when { !game.alive -> SRed; game.won -> SGold; else -> STeal })
@@ -127,13 +133,20 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
             Box(
                 Modifier.width(600.dp).height(380.dp).background(SBg)
                     .pointerInput(Unit) {
-                        detectTapGestures { offset ->
-                            game.clickAt(
-                                offset.x / size.width.toFloat(),
-                                offset.y / size.height.toFloat()
-                            )
-                            CrackleSound.dungeonHit()
-                        }
+                        detectTapGestures(
+                            onTap = { offset ->
+                                game.clickAt(
+                                    offset.x / size.width.toFloat(),
+                                    offset.y / size.height.toFloat()
+                                )
+                                CrackleSound.dungeonHit()
+                            },
+                            onLongPress = { offset ->
+                                game.playerY = (offset.y / size.height.toFloat()).coerceIn(0.05f, 0.95f)
+                                game.grapple()
+                                CrackleSound.click()
+                            }
+                        )
                     }
             ) {
                 Canvas(Modifier.fillMaxSize()) {
@@ -241,8 +254,15 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
     // Balles
     game.bullets.filter { it.alive }.forEach { b ->
         val bx = b.x * w; val by = b.y * h
-        drawCircle(SBullet, radius = 3f, center = Offset(bx, by))
-        drawLine(SBullet.copy(alpha = 0.4f), Offset(bx - 10f, by), Offset(bx, by), 1.5f)
+        if (b.isFlame) {
+            // Gerbe de feu — flamme orange/rouge
+            drawCircle(Color(0xFFFF4500), radius = 5f, center = Offset(bx, by))
+            drawCircle(Color(0xFFFFD700), radius = 2.5f, center = Offset(bx, by))
+            drawLine(Color(0xFFFF6B00).copy(alpha = 0.6f), Offset(bx - 14f, by), Offset(bx, by), 3f)
+        } else {
+            drawCircle(SBullet, radius = 3f, center = Offset(bx, by))
+            drawLine(SBullet.copy(alpha = 0.4f), Offset(bx - 10f, by), Offset(bx, by), 1.5f)
+        }
     }
 
     // Zombies — forme différente par type
@@ -304,6 +324,25 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
             drawRect(Color(0xFF1A1A1A), Offset(zx - barW/2, barY), Size(barW, 3f))
             drawRect(if (hpR > 0.5f) STeal else SRed, Offset(zx - barW/2, barY), Size(barW * hpR, 3f))
         }
+    }
+
+    // Grappin — toujours visible quand actif
+    val g = game.grapple
+    if (g.active) {
+        val gx = g.x * w; val gy = g.y * h
+        val px = w * 0.08f; val py = game.playerY * h
+        drawLine(Color(0xFFC8A44A).copy(alpha = 0.8f), Offset(px, py), Offset(gx, gy), 1.5f)
+        drawCircle(Color(0xFFFFD700), 4f, Offset(gx, gy))
+        drawCircle(Color(0xFFC8A44A), 4f, Offset(gx, gy), style = Stroke(1.5f))
+    }
+
+    // Pièces Igni Terra
+    game.parts.filter { it.alive }.forEach { p ->
+        val px = p.x * w; val py = p.y * h
+        drawCircle(Color(0xFFC8A44A).copy(alpha = 0.9f), 5f, Offset(px, py))
+        drawCircle(Color(0xFFFFD700), 5f, Offset(px, py), style = Stroke(1.5f))
+        drawLine(Color(0xFFFFD700).copy(alpha = 0.8f), Offset(px - 3f, py), Offset(px + 3f, py), 1.5f)
+        drawLine(Color(0xFFFFD700).copy(alpha = 0.8f), Offset(px, py - 3f), Offset(px, py + 3f), 1.5f)
     }
 
     // Missiles

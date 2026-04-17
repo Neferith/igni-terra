@@ -31,13 +31,31 @@ data class Zombie(
 )
 
 data class Bullet(
-    val id   : Int,
-    var x    : Float,
-    val y    : Float,
-    var alive: Boolean = true
+    val id      : Int,
+    var x       : Float,
+    var y       : Float,
+    var alive   : Boolean = true,
+    val dirY    : Float   = 0f,    // déviation verticale (gerbe)
+    val isFlame : Boolean = false,  // balle de feu
+    val damage  : Int     = 1      // dégâts
 )
 
 data class Explosion(val x: Float, val y: Float, var frames: Int = 8)
+
+data class Grapple(
+    var active  : Boolean = false,
+    var x       : Float   = 0f,
+    var y       : Float   = 0f,
+    var targetId: Int     = -1,  // id de la pièce visée
+    var retracting: Boolean = false
+)
+
+data class IgniPart(
+    val id   : Int,
+    var x    : Float,
+    var y    : Float,
+    var alive: Boolean = true
+)
 
 data class Missile(
     val id   : Int,
@@ -78,6 +96,12 @@ class ShooterGame {
     val zombies    = mutableListOf<Zombie>()
     val civilians  = mutableListOf<Civilian>()
     val missiles   = mutableListOf<Missile>()
+    val parts      = mutableListOf<IgniPart>()
+    var igniParts  by mutableStateOf(0)  // pièces collectées
+    var igniCharged by mutableStateOf(false)  // gerbe disponible
+    var igniLevel   by mutableStateOf(0)      // 0=normal 1=α 2=β 3=γ
+    var igniTotal   by mutableStateOf(0)      // total pièces collectées
+    var grapple    = Grapple()
     var finalBoss  : FinalBoss? = null
     val bullets    = mutableListOf<Bullet>()
     val explosions = mutableListOf<Explosion>()
@@ -120,7 +144,15 @@ class ShooterGame {
 
     fun shoot() {
         if (!alive || !started) return
-        bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY))
+        if (igniCharged) {
+            // Gerbe de feu — 5 balles en éventail (igniCharged reste true)
+            val angles = listOf(-0.25f, -0.12f, 0f, 0.12f, 0.25f)
+            angles.forEach { da ->
+                bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY, dirY = da, isFlame = true))
+            }
+        } else {
+            bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY))
+        }
     }
 
     fun tick(scope: CoroutineScope) {
@@ -156,14 +188,19 @@ class ShooterGame {
         bullets.forEach { b ->
             if (!b.alive) { deadBullets.add(b); return@forEach }
             b.x += 0.030f
-            if (b.x > 1.0f) { b.alive = false; return@forEach }
+            b.y += b.dirY * 0.015f
+            if (b.x > 1.0f || b.y < 0f || b.y > 1f) { b.alive = false; return@forEach }
             zombies.filter { it.alive }.forEach { z ->
                 if (b.alive && abs(b.x - z.x) < 0.05f && abs(b.y - z.y) < 0.06f) {
-                    z.hp--; z.hitFlash = 4; b.alive = false
+                    z.hp -= b.damage; z.hitFlash = 4; b.alive = false
                     if (z.hp <= 0) {
                         z.alive = false
                         score += z.type.points
                         explosions.add(Explosion(z.x, z.y))
+                        // Drop aléatoire de pièce Igni Terra
+                        if (rng.nextFloat() < 0.35f) {
+                            parts.add(IgniPart(id = nextId++, x = z.x, y = z.y))
+                        }
                     }
                 }
             }
@@ -256,7 +293,7 @@ class ShooterGame {
             // Tir de missiles
             val fireRate = if (boss.phase == 0) 0.015f else 0.030f
             if (rng.nextFloat() < fireRate) {
-                val targetY = this.playerY
+                val targetY = playerY
                 val dy = (targetY - boss.y).coerceIn(-0.5f, 0.5f)
                 missiles.add(Missile(id = nextId++, x = boss.x - 0.05f, y = boss.y, dirY = dy * 0.8f))
             }
@@ -271,7 +308,7 @@ class ShooterGame {
             bullets.filter { it.alive }.forEach { b ->
                 if (b.alive && b.x > boss.x - 0.08f && abs(b.y - boss.y) < 0.12f) {
                     b.alive = false
-                    boss.hp -= 1
+                    boss.hp -= b.damage
                     boss.hitFlash = 4
                     if (boss.hp <= 0) {
                         boss.alive = false
@@ -284,6 +321,71 @@ class ShooterGame {
                 }
             }
         }
+
+        // Grappin
+        val g = grapple
+        if (g.active) {
+            if (!g.retracting) {
+                // Le grappin avance vers la droite
+                g.x += 0.035f
+                // Collision avec une pièce
+                val target = parts.firstOrNull { it.alive && it.id == g.targetId }
+                if (target != null && kotlin.math.abs(g.x - target.x) < 0.04f && kotlin.math.abs(g.y - target.y) < 0.06f) {
+                    g.retracting = true
+                } else if (g.x >= 0.55f || target == null) {
+                    // Raté — atteint la moitié de l'écran, revient à vide
+                    g.retracting = true
+                    g.targetId = -1
+                }
+            } else {
+                // Rétractation — la pièce suit le grappin vers le joueur
+                g.x -= 0.04f
+                val target = parts.firstOrNull { it.alive && it.id == g.targetId }
+                if (target != null) {
+                    target.x = g.x
+                    target.y = g.y
+                }
+                if (g.x <= 0.10f) {
+                    val picked = parts.firstOrNull { it.alive && it.id == g.targetId }
+                    if (picked != null) {
+                        picked.alive = false
+                        igniParts++
+                        igniTotal++
+                    }
+                    if (igniParts >= 5) {
+                        igniParts = 0
+                        igniCharged = true
+                        igniLevel = when {
+                            igniTotal >= 15 -> { message = "🔥 MODE γ — PUISSANCE MAXIMALE !"; 3 }
+                            igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
+                            else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
+                        }
+                    }
+                    g.active = false
+                }
+            }
+        }
+
+        // Ramassage pièces Igni Terra
+        val deadParts = mutableListOf<IgniPart>()
+        parts.forEach { p ->
+            if (!p.alive) { deadParts.add(p); return@forEach }
+            if (kotlin.math.abs(p.x - 0.08f) < 0.05f && kotlin.math.abs(p.y - playerY) < 0.07f) {
+                p.alive = false
+                igniParts++
+                igniTotal++
+                if (igniParts >= 5) {
+                    igniParts = 0
+                    igniCharged = true
+                    igniLevel = when {
+                        igniTotal >= 15 -> { message = "🔥 MODE γ — PUISSANCE MAXIMALE !"; 3 }
+                        igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
+                        else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
+                    }
+                }
+            }
+        }
+        deadParts.forEach { parts.remove(it) }
 
         // Missiles
         val deadMissiles = mutableListOf<Missile>()
@@ -303,6 +405,18 @@ class ShooterGame {
         deadMissiles.forEach { missiles.remove(it) }
 
         tickCount++
+    }
+
+    fun grapple() {
+        if (!alive || !started || grapple.active) return
+        // Lance toujours le grappin — cherche une cible si dispo
+        val nearest = parts.filter { it.alive && it.x > 0.10f }
+            .minByOrNull { kotlin.math.abs(it.y - playerY) + (it.x - 0.10f) * 0.5f }
+        grapple.active     = true
+        grapple.retracting = false
+        grapple.x          = 0.12f
+        grapple.y          = playerY
+        grapple.targetId   = nearest?.id ?: -1  // -1 = pas de cible, va jusqu'à mi-écran
     }
 
     // Clic souris — déplace le joueur vers Y puis tire
