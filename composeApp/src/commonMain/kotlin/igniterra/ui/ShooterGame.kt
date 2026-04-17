@@ -113,7 +113,10 @@ class ShooterGame {
     var won       by mutableStateOf(false)
     var started   by mutableStateOf(false)
     var message   by mutableStateOf("")
-    var tickCount by mutableStateOf(0)
+    var tickCount  by mutableStateOf(0)
+    var badEnding   by mutableStateOf(false)
+    var girlsSaved  by mutableStateOf(0)
+    var girlsLost   by mutableStateOf(0)
 
     // Position du joueur (0.0 = haut, 1.0 = bas)
     var playerY        by mutableStateOf(0.5f)
@@ -127,8 +130,16 @@ class ShooterGame {
     fun start() {
         score = 0; lives = 3; wave = 0; alive = true; won = false
         playerY = 0.5f
-        zombies.clear(); bullets.clear(); explosions.clear(); civilians.clear()
+        badEnding = false
+        girlsSaved = 0
+        girlsLost = 0
+        // Clear tout sauf la charge igni
+        zombies.clear(); bullets.clear(); explosions.clear()
+        civilians.clear(); parts.clear(); missiles.clear()
+        grapple = Grapple()
+        finalBoss = null
         civilianMessage = ""; civilianMsgTimer = 0
+        // Garde igniCharged, igniLevel, igniTotal, igniParts
         started = true
         spawnWave(0)
     }
@@ -145,10 +156,14 @@ class ShooterGame {
     fun shoot() {
         if (!alive || !started) return
         if (igniCharged) {
-            // Gerbe de feu — 5 balles en éventail (igniCharged reste true)
-            val angles = listOf(-0.25f, -0.12f, 0f, 0.12f, 0.25f)
+            val angles = when (igniLevel) {
+                1    -> listOf(-0.15f, 0f, 0.15f)
+                2    -> listOf(-0.20f, -0.10f, 0f, 0.10f, 0.20f)
+                else -> listOf(-0.25f, -0.15f, -0.05f, 0.05f, 0.15f, 0.25f)
+            }
+            val dmg = 1 shl igniLevel  // α=2, β=4, γ=8
             angles.forEach { da ->
-                bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY, dirY = da, isFlame = true))
+                bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY, dirY = da, isFlame = true, damage = dmg))
             }
         } else {
             bullets.add(Bullet(id = nextId++, x = 0.10f, y = playerY))
@@ -240,8 +255,8 @@ class ShooterGame {
         if (civilianMsgTimer > 0) civilianMsgTimer--
         else civilianMessage = ""
 
-        // Spawn civilian aléatoire (~toutes les 30s en moyenne)
-        if (rng.nextFloat() < 0.0003f && civilians.none { it.alive }) {
+        // Spawn civilian aléatoire — uniquement si le jeu est en cours
+        if (alive && !won && rng.nextFloat() < 0.002f && civilians.none { it.alive }) {
             civilians.add(Civilian(
                 x = 0.98f,
                 y = 0.10f + rng.nextFloat() * 0.80f
@@ -253,11 +268,22 @@ class ShooterGame {
         civilians.forEach { c ->
             if (!c.alive || c.saved) { deadCivilians.add(c); return@forEach }
             c.x -= 0.003f  // avance lentement
-            if (c.x <= 0.08f) {
+            // Sauvée — joueur sur son chemin
+            if (c.x in 0.06f..0.16f && kotlin.math.abs(c.y - playerY) < 0.08f) {
                 c.saved = true
                 score += 50
+                girlsSaved++
                 civilianMessage = "SAUVÉE ! +50"
                 civilianMsgTimer = 120
+                deadCivilians.add(c)
+            }
+            // Perdue — passe à gauche sans être sauvée
+            else if (c.x <= 0.05f) {
+                c.saved = false
+                badEnding = true
+                girlsLost++
+                civilianMessage = "UNE ENFANT EST PERDUE..."
+                civilianMsgTimer = 180
                 deadCivilians.add(c)
             }
         }
@@ -271,6 +297,8 @@ class ShooterGame {
                     c.alive = false
                     lives = (lives - 1).coerceAtLeast(0)
                     explosions.add(Explosion(c.x, c.y))
+                    girlsLost++
+                    badEnding = true
                     civilianMessage = "TU L'AS TUÉE !"
                     civilianMsgTimer = 120
                     if (lives <= 0) { alive = false; message = "GAME OVER" }
@@ -299,7 +327,7 @@ class ShooterGame {
             }
 
             // Lance une petite fille (phase enragée)
-            if (boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
+            if (alive && !won && boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
                 civilians.add(Civilian(x = boss.x - 0.05f, y = boss.y + (rng.nextFloat() - 0.5f) * 0.2f))
                 message = "⚠ IL LANCE UNE ENFANT !"
             }
@@ -330,6 +358,17 @@ class ShooterGame {
                 g.x += 0.035f
                 // Collision avec une pièce
                 val target = parts.firstOrNull { it.alive && it.id == g.targetId }
+                // Grappin attrape une civile en vol
+                civilians.filter { it.alive && !it.saved }.forEach { c ->
+                    if (kotlin.math.abs(g.x - c.x) < 0.05f && kotlin.math.abs(g.y - c.y) < 0.07f) {
+                        c.saved = true
+                        score += 50
+                        girlsSaved++
+                        lives = (lives + 1).coerceAtMost(9)
+                        civilianMessage = "SAUVÉE ! +50 +♥"
+                        civilianMsgTimer = 120
+                    }
+                }
                 if (target != null && kotlin.math.abs(g.x - target.x) < 0.04f && kotlin.math.abs(g.y - target.y) < 0.06f) {
                     g.retracting = true
                 } else if (g.x >= 0.55f || target == null) {
@@ -346,11 +385,23 @@ class ShooterGame {
                     target.y = g.y
                 }
                 if (g.x <= 0.10f) {
+                    // Ramasse une pièce si c'est la cible
                     val picked = parts.firstOrNull { it.alive && it.id == g.targetId }
                     if (picked != null) {
                         picked.alive = false
                         igniParts++
                         igniTotal++
+                    }
+                    // Ramasse une fille si le grappin passe près d'elle
+                    civilians.filter { it.alive && !it.saved }.forEach { c ->
+                        if (kotlin.math.abs(g.x - c.x) < 0.06f && kotlin.math.abs(g.y - c.y) < 0.08f) {
+                            c.saved = true
+                            score += 50
+                            girlsSaved++
+                            lives = (lives + 1).coerceAtMost(9)
+                            civilianMessage = "SAUVÉE ! +50 +♥"
+                            civilianMsgTimer = 120
+                        }
                     }
                     if (igniParts >= 5) {
                         igniParts = 0

@@ -127,11 +127,35 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 }
             }
 
+            // Stats filles
+            Row(
+                Modifier.fillMaxWidth().background(Color(0xFF0A0510))
+                    .padding(horizontal = 14.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("CIVILES", fontSize = 6.sp, letterSpacing = 2.sp, fontFamily = SMono, color = ST3)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("♥", fontSize = 10.sp, color = Color(0xFFFFB3C6))
+                    Text("SAUVÉES : ${game.girlsSaved}", fontSize = 8.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("✕", fontSize = 10.sp, color = SRed)
+                    Text("PERDUES : ${game.girlsLost}", fontSize = 8.sp, fontFamily = SMono, color = SRed)
+                }
+                if (game.civilianMessage.isNotEmpty()) {
+                    Text(game.civilianMessage, fontSize = 8.sp, fontFamily = SMono,
+                        color = if (game.civilianMessage.contains("PERDUE")) SRed else Color(0xFFFFB3C6),
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+
             Box(Modifier.fillMaxWidth().height(1.dp).background(SBdr))
 
             // Zone de jeu
             Box(
-                Modifier.width(600.dp).height(380.dp).background(SBg)
+                Modifier.width(600.dp).height(340.dp).background(SBg)
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = { offset ->
@@ -155,18 +179,38 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 }
 
                 if (!game.alive || game.won) {
+                    val isBadEnding = game.won && game.badEnding
                     Box(
                         Modifier.fillMaxSize().background(
-                            if (!game.alive) Color(0xCC000000) else Color(0xCC000510)
+                            when {
+                                !game.alive    -> Color(0xCC000000)
+                                isBadEnding    -> Color(0xCC1A0000)
+                                else           -> Color(0xCC000510)
+                            }
                         ),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                if (!game.alive) "GAME OVER" else "VICTOIRE !",
+                                when {
+                                    !game.alive  -> "GAME OVER"
+                                    isBadEnding  -> "VICTOIRE AMÈRE"
+                                    else         -> "VICTOIRE !"
+                                },
                                 fontSize = 22.sp, fontFamily = SMono, letterSpacing = 4.sp,
-                                color = if (!game.alive) SRed else SGold
+                                color = when {
+                                    !game.alive -> SRed
+                                    isBadEnding -> Color(0xFFFF6B00)
+                                    else        -> SGold
+                                }
                             )
+                            Spacer(Modifier.height(6.dp))
+                            Spacer(Modifier.height(4.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Text("♥ Sauvées : ${game.girlsSaved}", fontSize = 9.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
+                                Text("✕ Perdues : ${game.girlsLost}", fontSize = 9.sp, fontFamily = SMono,
+                                    color = if (game.girlsLost > 0) SRed else ST3)
+                            }
                             Spacer(Modifier.height(6.dp))
                             Text("Score final : ${game.score}", fontSize = 11.sp, fontFamily = SMono, color = ST3)
                             Text("Retour dans 3s...", fontSize = 8.sp, fontFamily = SMono, color = ST3)
@@ -220,7 +264,7 @@ fun ShooterFullScreen(
     onQuit    : () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() })

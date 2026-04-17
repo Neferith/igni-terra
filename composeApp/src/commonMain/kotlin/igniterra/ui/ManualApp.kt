@@ -88,7 +88,7 @@ fun ManualApp() {
     if (recipient != null && recipient!!.hasGameAccess) {
         ShooterFullScreen(
             recipient = recipient!!,
-            onQuit = { recipient = null }
+            onQuit = { /*recipient = null*/ }
         )
 
     } else {
