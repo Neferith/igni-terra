@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -113,14 +114,14 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
             ) {
                 ShooterHud("VAGUE", "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
-                ShooterHud("VIES",  "♥".repeat(game.lives.coerceAtLeast(0)).padEnd(3, '♡'))
+                ShooterHud("VIES",  "${game.lives}")
                 ShooterHud("IGNI", when (game.igniLevel) {
                     0 -> "${game.igniParts}/5 → α"
-                    1 -> "α | ${game.igniParts}/5 → β"
-                    2 -> "β | ${game.igniParts}/5 → γ"
-                    else -> "γ MAX 🔥"
+                    1 -> "α ×2 | ${game.igniParts}/5 → β"
+                    2 -> "β ×4 | ${game.igniParts}/5 → γ"
+                    else -> "γ ×8 🔥"
                 })
-                Text("CLIC TIRER  ·  LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
+                Text("CLIC TIRER  ·  CLIC DROIT / LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
                 if (game.message.isNotEmpty()) {
                     Text(game.message, fontSize = 9.sp, fontFamily = SMono, letterSpacing = 2.sp,
                         color = when { !game.alive -> SRed; game.won -> SGold; else -> STeal })
@@ -172,10 +173,49 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                             }
                         )
                     }
+                    .pointerInput("rightclick") {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == androidx.compose.ui.input.pointer.PointerEventType.Press) {
+                                    val change = event.changes.firstOrNull() ?: continue
+                                    if (event.buttons.isSecondaryPressed) {
+                                        change.consume()
+                                        val ny = change.position.y / size.height.toFloat()
+                                        game.playerY = ny.coerceIn(0.05f, 0.95f)
+                                        game.grapple()
+                                        CrackleSound.click()
+                                    }
+                                }
+                            }
+                        }
+                    }
             ) {
                 Canvas(Modifier.fillMaxSize()) {
                     val tick = game.tickCount
                     drawShooterField(game)
+                }
+
+                // Dégâts flottants — Text par-dessus le Canvas
+                game.dmgNumbers.forEach { d ->
+                    val alpha = (d.frames / 30f).coerceIn(0f, 1f)
+                    val rise  = (30 - d.frames) * 0.6f
+                    val color = when {
+                        d.amount >= 8 -> Color(0xFFFF4500)
+                        d.amount >= 4 -> Color(0xFFFFAA00)
+                        d.amount >= 2 -> Color(0xFFFFD700)
+                        else          -> Color(0xFFE2E8F0)
+                    }
+                    Text(
+                        "×${d.amount}",
+                        fontSize = if (d.amount >= 4) 13.sp else 10.sp,
+                        fontFamily = SMono,
+                        color = color.copy(alpha = alpha),
+                        modifier = Modifier.offset(
+                            x = (d.x * 600 - 10).dp,
+                            y = (d.y * 340 - rise - 14).dp
+                        )
+                    )
                 }
 
                 if (!game.alive || game.won) {
@@ -264,7 +304,7 @@ fun ShooterFullScreen(
     onQuit    : () -> Unit
 ) {
     LaunchedEffect(Unit) {
-
+        recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() })

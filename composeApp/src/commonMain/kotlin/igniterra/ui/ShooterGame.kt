@@ -50,6 +50,13 @@ data class Grapple(
     var retracting: Boolean = false
 )
 
+data class DamageNumber(
+    val x      : Float,
+    val y      : Float,
+    val amount : Int,
+    var frames : Int = 30
+)
+
 data class IgniPart(
     val id   : Int,
     var x    : Float,
@@ -97,6 +104,7 @@ class ShooterGame {
     val civilians  = mutableListOf<Civilian>()
     val missiles   = mutableListOf<Missile>()
     val parts      = mutableListOf<IgniPart>()
+    val dmgNumbers = mutableListOf<DamageNumber>()
     var igniParts  by mutableStateOf(0)  // pièces collectées
     var igniCharged by mutableStateOf(false)  // gerbe disponible
     var igniLevel   by mutableStateOf(0)      // 0=normal 1=α 2=β 3=γ
@@ -208,6 +216,7 @@ class ShooterGame {
             zombies.filter { it.alive }.forEach { z ->
                 if (b.alive && abs(b.x - z.x) < 0.05f && abs(b.y - z.y) < 0.06f) {
                     z.hp -= b.damage; z.hitFlash = 4; b.alive = false
+                    dmgNumbers.add(DamageNumber(z.x, z.y, b.damage))
                     if (z.hp <= 0) {
                         z.alive = false
                         score += z.type.points
@@ -338,6 +347,7 @@ class ShooterGame {
                     b.alive = false
                     boss.hp -= b.damage
                     boss.hitFlash = 4
+                    dmgNumbers.add(DamageNumber(boss.x, boss.y - 0.1f, b.damage))
                     if (boss.hp <= 0) {
                         boss.alive = false
                         score += 500
@@ -454,6 +464,9 @@ class ShooterGame {
             }
         }
         deadMissiles.forEach { missiles.remove(it) }
+
+        // Damage numbers
+        dmgNumbers.removeAll { d -> d.frames-- <= 0 }
 
         tickCount++
     }
