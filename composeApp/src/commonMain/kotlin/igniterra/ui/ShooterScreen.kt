@@ -124,11 +124,9 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 ShooterHud("VAGUE", "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "${game.lives}")
+
                 Text("CLIC TIRER  ·  CLIC DROIT / LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
-                if (game.message.isNotEmpty()) {
-                    Text(game.message, fontSize = 9.sp, fontFamily = SMono, letterSpacing = 2.sp,
-                        color = when { !game.alive -> SRed; game.won -> SGold; else -> STeal })
-                }
+
             }
 
             // Stats filles
@@ -219,6 +217,47 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                             y = (d.y * 340 - rise - 14).dp
                         )
                     )
+                }
+
+                // Overlay message central
+                if (game.message.isNotEmpty() && game.alive && !game.won) {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val msgColor = when {
+                            game.message.contains("LEGAT") || game.message.contains("FINALE") -> SRed
+                            game.message.contains("VAINCU") -> SGold
+                            game.message.contains("REQUIS") -> Color(0xFFFF6600)
+                            game.message.contains("MAX") || game.message.contains("γ") -> Color(0xFFFF4400)
+                            game.message.contains("β") -> Color(0xFFCC6600)
+                            game.message.contains("α") -> Color(0xFF884400)
+                            game.message.contains("VAGUE") -> STeal
+                            else -> STeal
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .background(SPanel.copy(alpha = 0.85f))
+                                .border(1.dp, msgColor.copy(alpha = 0.6f))
+                                .padding(horizontal = 24.dp, vertical = 10.dp)
+                        ) {
+                            // Ligne déco haut
+                            Box(Modifier.width(120.dp).height(1.dp).background(msgColor.copy(alpha = 0.5f)))
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                game.message,
+                                fontSize = 13.sp,
+                                fontFamily = SMono,
+                                color = msgColor,
+                                letterSpacing = 3.sp
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            // Ligne déco bas
+                            Box(Modifier.width(120.dp).height(1.dp).background(msgColor.copy(alpha = 0.5f)))
+                        }
+                    }
                 }
 
                 if (!game.alive || game.won) {

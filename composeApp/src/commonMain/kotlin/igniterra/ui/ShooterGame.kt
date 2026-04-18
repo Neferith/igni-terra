@@ -123,7 +123,8 @@ class ShooterGame {
     var alive     by mutableStateOf(true)
     var won       by mutableStateOf(false)
     var started   by mutableStateOf(false)
-    var message   by mutableStateOf("")
+    var message      by mutableStateOf("")
+    var messageTimer  = 0
     var tickCount  by mutableStateOf(0)
     var badEnding   by mutableStateOf(false)
     var girlsSaved  by mutableStateOf(0)
@@ -150,6 +151,7 @@ class ShooterGame {
         grapple = Grapple()
         finalBoss = null
         civilianMessage = ""; civilianMsgTimer = 0
+        message = ""; messageTimer = 0; messagePriority = 0
         // Garde igniCharged, igniLevel, igniTotal, igniParts
         started = true
         spawnWave(0)
@@ -157,8 +159,18 @@ class ShooterGame {
 
     private fun spawnWave(waveIdx: Int) {
         wave = waveIdx + 1
-        message = "VAGUE $wave"
+        showMessage("VAGUE $wave", 120)
         spawnQueue = WAVES.getOrElse(waveIdx) { WAVES.last() }.toMutableList()
+    }
+
+    private var messagePriority = 0
+
+    private fun showMessage(msg: String, frames: Int = 180, priority: Int = 0) {
+        if (priority >= messagePriority) {
+            message = msg
+            messageTimer = frames
+            messagePriority = priority
+        }
     }
 
     fun moveUp()   { if (alive && started) playerY = (playerY - 0.04f).coerceAtLeast(0.05f) }
@@ -248,7 +260,7 @@ class ShooterGame {
                     message = "LE LÉGAT SUPRÊME ARRIVE..."
                     delay(2000L)
                     wave = WAVES.size + 1
-                    message = "VAGUE FINALE"
+                    showMessage("VAGUE FINALE", 150, priority = 5)
                     finalBoss = FinalBoss()
                 }
                 return
@@ -258,16 +270,18 @@ class ShooterGame {
             } else {
                 val nextWave = wave
                 scope.launch {
-                    message = "VAGUE ${nextWave + 1} EN APPROCHE..."
+                    showMessage("VAGUE ${nextWave + 1} EN APPROCHE...", 120)
                     delay(2000L)
                     spawnWave(nextWave)
                 }
             }
         }
 
-        // Message timer
+        // Message timers
         if (civilianMsgTimer > 0) civilianMsgTimer--
         else civilianMessage = ""
+        if (messageTimer > 0) messageTimer--
+        else if (messageTimer == 0 && message.isNotEmpty() && alive && !won) { message = ""; messagePriority = 0 }
 
         // Spawn civilian aléatoire — uniquement si le jeu est en cours
         if (alive && !won && rng.nextFloat() < 0.002f && civilians.none { it.alive }) {
@@ -347,7 +361,7 @@ class ShooterGame {
             // Lance une petite fille (phase enragée)
             if (alive && !won && boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
                 civilians.add(Civilian(x = boss.x - 0.05f, y = boss.y + (rng.nextFloat() - 0.5f) * 0.2f))
-                message = "!! IL LANCE UNE ENFANT !!"
+                showMessage("!! IL LANCE UNE ENFANT !!", 150, priority = 8)
             }
 
             // Collision balles joueur → boss (immunisé sans mode γ)
@@ -357,7 +371,7 @@ class ShooterGame {
                     if (!b.isFlame || igniLevel < 3) {
                         // Balle rejetée — boss immunisé
                         boss.shieldFlash = 12
-                        message = "!! IGNI TERRA γ REQUIS !!"
+                        showMessage("!! IGNI TERRA γ REQUIS !!", 100, priority = 10)
                         return@forEach
                     }
                     boss.hp -= b.damage
@@ -434,9 +448,9 @@ class ShooterGame {
                         igniParts = 0
                         igniCharged = true
                         igniLevel = when {
-                            igniTotal >= 15 -> { message = "MODE γ — PUISSANCE MAX !"; 3 }
-                            igniTotal >= 10 -> { message = "MODE β DEBLOQUE !"; 2 }
-                            else            -> { message = "MODE α DEBLOQUE !"; 1 }
+                            igniTotal >= 15 -> { showMessage("MODE γ — PUISSANCE MAX !", 200); 3 }
+                            igniTotal >= 10 -> { showMessage("MODE β DEBLOQUE !", 180); 2 }
+                            else            -> { showMessage("MODE α DEBLOQUE !", 180); 1 }
                         }
                         CrackleSound.shooterLevelUp()
                     }
@@ -458,9 +472,9 @@ class ShooterGame {
                     igniParts = 0
                     igniCharged = true
                     igniLevel = when {
-                        igniTotal >= 15 -> { message = "MODE γ — PUISSANCE MAX !"; 3 }
-                        igniTotal >= 10 -> { message = "MODE β DEBLOQUE !"; 2 }
-                        else            -> { message = "MODE α DEBLOQUE !"; 1 }
+                        igniTotal >= 15 -> { showMessage("MODE γ — PUISSANCE MAX !", 200); 3 }
+                        igniTotal >= 10 -> { showMessage("MODE β DEBLOQUE !", 180); 2 }
+                        else            -> { showMessage("MODE α DEBLOQUE !", 180); 1 }
                     }
                     CrackleSound.shooterLevelUp()
                 }
