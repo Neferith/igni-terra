@@ -849,6 +849,33 @@ actual object CrackleSound {
         }, "shooter-playerhit").also { it.isDaemon = true; it.start() }
     }
 
+    actual fun shooterLevelUp() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val notes = listOf(392.0 to 80, 523.0 to 80, 659.0 to 80, 784.0 to 200)
+                val totalSamples: Int = notes.fold(0) { acc, (_, ms) -> (acc + SAMPLE_RATE * ms / 1000).toInt() }
+                val buf = ByteArray(totalSamples * 2)
+                var i = 0
+                notes.forEach { (freq, ms) ->
+                    val end = i + SAMPLE_RATE * ms / 1000
+                    while (i < end && i < totalSamples) {
+                        val t = (i % (SAMPLE_RATE * ms / 1000)).toDouble() / SAMPLE_RATE
+                        val env = kotlin.math.exp(-t * 6.0)
+                        val s = kotlin.math.sin(2.0 * Math.PI * freq * t) * env * 0.45 * globalVolume
+                        val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                        buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                        buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                        i++
+                    }
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-levelup").also { it.isDaemon = true; it.start() }
+    }
+
 }
 
 

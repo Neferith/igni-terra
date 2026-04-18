@@ -74,11 +74,13 @@ data class Missile(
 )
 
 data class FinalBoss(
-    var hp       : Int   = 60,
+    var hp       : Int   = 120,
+    val maxHp    : Int   = 120,
     var x        : Float = 0.88f,
     var y        : Float = 0.5f,
     var alive    : Boolean = true,
-    var hitFlash : Int   = 0,
+    var hitFlash   : Int   = 0,
+    var shieldFlash: Int   = 0,  // flash bouclier quand immunisé
     var phase    : Int   = 0   // 0=normal, 1=enragé (hp<30)
 )
 
@@ -326,9 +328,10 @@ class ShooterGame {
             if (!boss.alive) return@let
 
             if (boss.hitFlash > 0) boss.hitFlash--
+            if (boss.shieldFlash > 0) boss.shieldFlash--
 
             // Phase enragée si PV < 30
-            boss.phase = if (boss.hp < 30) 1 else 0
+            boss.phase = if (boss.hp < 60) 1 else 0
 
             // Oscillation verticale
             boss.y += ((if (boss.phase == 0) 0.004f else 0.007f) * kotlin.math.sin(tickCount * 0.05)).toFloat()
@@ -347,16 +350,22 @@ class ShooterGame {
                 message = "⚠ IL LANCE UNE ENFANT !"
             }
 
-            // Collision balles joueur → boss
+            // Collision balles joueur → boss (immunisé sans mode γ)
             bullets.filter { it.alive }.forEach { b ->
                 if (b.alive && b.x > boss.x - 0.08f && abs(b.y - boss.y) < 0.12f) {
                     b.alive = false
+                    if (!b.isFlame || igniLevel < 3) {
+                        // Balle rejetée — boss immunisé
+                        boss.shieldFlash = 12
+                        message = "⚠ UTILISEZ L'IGNI TERRA γ !"
+                        return@forEach
+                    }
                     boss.hp -= b.damage
                     boss.hitFlash = 4
                     dmgNumbers.add(DamageNumber(boss.x, boss.y - 0.1f, b.damage))
                     if (boss.hp <= 0) {
                         boss.alive = false
-                        score += 500
+                        score += 1000
                         message = "LÉGAT SUPRÊME VAINCU ! +500"
                         explosions.add(Explosion(boss.x, boss.y))
                         explosions.add(Explosion(boss.x - 0.05f, boss.y - 0.05f))
@@ -429,6 +438,7 @@ class ShooterGame {
                             igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
                             else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
                         }
+                        CrackleSound.shooterLevelUp()
                     }
                     g.active = false
                 }
@@ -452,6 +462,7 @@ class ShooterGame {
                         igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
                         else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
                     }
+                    CrackleSound.shooterLevelUp()
                 }
             }
         }

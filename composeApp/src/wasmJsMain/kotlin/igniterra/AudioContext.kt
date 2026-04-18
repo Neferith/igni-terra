@@ -293,4 +293,5 @@ actual object CrackleSound {
     actual fun shooterGirlKilled() { jsInitCtx(); playTonesWasm(listOf(392f to 200, 262f to 280), 0.4f, "sine") }
     actual fun shooterPartPickup() { jsInitCtx(); playTonesWasm(listOf(220f to 40, 440f to 40, 880f to 80), 0.35f, "square") }
     actual fun shooterPlayerHit()  { jsInitCtx(); playTonesWasm(listOf(55f to 80, 40f to 60), 0.6f, "sawtooth") }
+    actual fun shooterLevelUp()    { jsInitCtx(); playTonesWasm(listOf(392f to 80, 523f to 80, 659f to 80, 784f to 200), 0.45f, "sine") }
 }

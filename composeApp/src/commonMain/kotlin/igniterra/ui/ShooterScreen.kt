@@ -88,8 +88,14 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
             },
         contentAlignment = Alignment.Center
     ) {
+        val borderColor = when (game.igniLevel) {
+            3    -> Color(0xFFFF4400)  // gamma — orange flamme vif
+            2    -> Color(0xFFCC6600)  // beta — orange
+            1    -> Color(0xFF884400)  // alpha — orange sombre
+            else -> SRed.copy(alpha = 0.4f)
+        }
         Column(
-            Modifier.width(600.dp).background(SBg).border(1.dp, SRed.copy(alpha = 0.4f))
+            Modifier.width(600.dp).background(SBg).border(1.dp, borderColor)
         ) {
             // Header
             Row(
@@ -445,11 +451,11 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
             }
         }
 
-        // Barre de vie commune
-        if (z.type.hp > 1) {
+        // Barre de vie commune (sauf BOSS qui a sa propre barre)
+        if (z.type.hp > 1 && z.type != ZombieType.BOSS) {
             val barW = 20f
             val hpR  = z.hp.toFloat() / z.type.hp
-            val barY = zy - (if (z.type == ZombieType.BOSS) 18f else 14f)
+            val barY = zy - 14f
             drawRect(Color(0xFF1A1A1A), Offset(zx - barW/2, barY), Size(barW, 3f))
             drawRect(if (hpR > 0.5f) STeal else SRed, Offset(zx - barW/2, barY), Size(barW * hpR, 3f))
         }
@@ -535,13 +541,62 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
 
         // Barre de vie boss
         val barW = 80f
-        val hpR  = boss.hp.toFloat() / 60f
+        val hpR  = boss.hp.toFloat() / boss.maxHp.toFloat()
         drawRect(Color(0xFF1A1A1A), Offset(bx - barW/2, by - sz - 20f), Size(barW, 6f))
         drawRect(if (hpR > 0.5f) Color(0xFFFF4444) else Color(0xFFFF0000),
             Offset(bx - barW/2, by - sz - 20f), Size(barW * hpR, 6f))
         // Label
         drawRect(Color(0xFF8B0000).copy(alpha = 0.6f),
             Offset(bx - barW/2 - 2f, by - sz - 30f), Size(barW + 4f, 12f))
+
+        // Bouclier — ligne verticale bleue avec effet de dispersion
+        // Bouclier toujours visible — γ le traverse mais ne le supprime pas
+        if (true) {
+            val shieldX = bx - sz * 0.7f
+            val shieldAlpha = if (boss.shieldFlash > 0)
+                (boss.shieldFlash / 12f).coerceIn(0f, 1f)
+            else 0.25f
+            val shieldH = sz * 2.8f
+
+            // Halo du bouclier
+            drawRect(
+                Color(0xFF4488FF).copy(alpha = shieldAlpha * 0.15f),
+                Offset(shieldX - 10f, by - shieldH / 2),
+                Size(20f, shieldH)
+            )
+            // Ligne principale
+            drawLine(
+                Color(0xFF88AAFF).copy(alpha = shieldAlpha * 0.9f),
+                Offset(shieldX, by - shieldH / 2),
+                Offset(shieldX, by + shieldH / 2),
+                3f
+            )
+            // Lignes secondaires ondulées
+            val waveAmp = if (boss.shieldFlash > 0) 6f else 2f
+            for (seg in 0..8) {
+                val y1 = by - shieldH / 2 + seg * shieldH / 8
+                val y2 = by - shieldH / 2 + (seg + 1) * shieldH / 8
+                val xOff1 = kotlin.math.sin(seg * 1.2 + tick * 0.15).toFloat() * waveAmp
+                val xOff2 = kotlin.math.sin((seg + 1) * 1.2 + tick * 0.15).toFloat() * waveAmp
+                drawLine(
+                    Color(0xFF4488FF).copy(alpha = shieldAlpha * 0.5f),
+                    Offset(shieldX + xOff1, y1),
+                    Offset(shieldX + xOff2, y2),
+                    1.5f
+                )
+            }
+            // Particules de dispersion quand un tir est bloqué
+            if (boss.shieldFlash > 0) {
+                val sparkAlpha = shieldAlpha
+                for (j in 0..5) {
+                    val angle = (j * 60f + tick * 8f) * (kotlin.math.PI / 180f)
+                    val dist  = (12 - boss.shieldFlash) * 2f
+                    val sx = shieldX + dist * kotlin.math.cos(angle).toFloat()
+                    val sy = by + (j - 2.5f) * 12f + dist * kotlin.math.sin(angle).toFloat() * 0.3f
+                    drawCircle(Color(0xFF88CCFF).copy(alpha = sparkAlpha * 0.8f), 2.5f, Offset(sx, sy))
+                }
+            }
+        }
     }
 
     // Petite fille

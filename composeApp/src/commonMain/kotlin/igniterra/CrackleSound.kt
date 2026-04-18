@@ -37,4 +37,6 @@ expect object CrackleSound {
     fun shooterGirlKilled()    // petite fille tuée
     fun shooterPartPickup()    // pièce Igni Terra ramassée
     fun shooterPlayerHit()     // monstre dans notre camp
+
+    fun shooterLevelUp()        // montée de niveau Igni Terra
 }
