@@ -46,12 +46,15 @@ private val SBlood    = Color(0xFFAA1111)   // sang sombre
 
 // ── Overlay — structure identique à FpsView ───────────────────────────────────
 @Composable
-fun ShooterOverlay(onDismiss: () -> Unit) {
+fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false) {
     val game           = remember { ShooterGame() }
     val scope          = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        if (autoStart) game.start()
+    }
 
     // Game loop
     LaunchedEffect(game.alive, game.started) {
@@ -398,7 +401,7 @@ fun ShooterFullScreen(
         recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
-        ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() })
+        ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() }, autoStart = true)
     }
 }
 

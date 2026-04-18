@@ -37,6 +37,7 @@ fun IgniTerraIntro(
     var loaderProgress by remember { mutableStateOf(0f) }
     var displayedText  by remember { mutableStateOf("") }
     var phase          by remember { mutableStateOf(0) }
+    var countdown      by remember { mutableStateOf(-1) }
     var tick           by remember { mutableStateOf(0) }
 
     // Tick animation
@@ -56,7 +57,7 @@ fun IgniTerraIntro(
 
     // Séquence
     LaunchedEffect(Unit) {
-        // Chargement — 15 secondes avec boite à musique
+        // Chargement — 16 secondes avec boite à musique
         CrackleSound.playWav("boiteamusique.mp3", loop = false)
         val steps = 100
         repeat(steps) { i ->
@@ -92,6 +93,13 @@ fun IgniTerraIntro(
 
         phase = 2
         delay(300L)
+        // Compte à rebours
+        for (i in 5 downTo 1) {
+            countdown = i
+            delay(1000L)
+        }
+        countdown = 0
+        delay(200L)
         onComplete()
     }
 
@@ -148,6 +156,31 @@ fun IgniTerraIntro(
             }
 
             // Texte intro typewriter
+            // Compte à rebours
+            if (countdown > 0) {
+                Box(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "$countdown",
+                            fontSize = 48.sp,
+                            fontFamily = IMono,
+                            color = if (countdown <= 2) Color(0xFFFF4400) else ITeal,
+                            letterSpacing = 4.sp
+                        )
+                        Text(
+                            "MISSION EN APPROCHE...",
+                            fontSize = 7.sp,
+                            fontFamily = IMono,
+                            color = IT3,
+                            letterSpacing = 3.sp
+                        )
+                    }
+                }
+            }
+
             if (phase >= 1 && displayedText.isNotEmpty()) {
                 Spacer(Modifier.height(12.dp))
                 Box(
