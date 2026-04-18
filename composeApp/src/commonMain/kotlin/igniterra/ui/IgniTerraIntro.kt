@@ -61,7 +61,7 @@ fun IgniTerraIntro(
         val steps = 100
         repeat(steps) { i ->
             loaderProgress = i.toFloat() / steps
-            delay(150L)  // 100 × 170ms = 17 secondes
+            delay(160L)  // 100 × 170ms = 17 secondes
         }
         loaderProgress = 1f
         delay(400L)
