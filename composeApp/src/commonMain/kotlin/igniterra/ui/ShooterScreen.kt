@@ -124,12 +124,6 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 ShooterHud("VAGUE", "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "${game.lives}")
-                ShooterHud("IGNI", when (game.igniLevel) {
-                    0 -> "${game.igniParts}/5 -> α"
-                    1 -> "α ×2 | ${game.igniParts}/5 -> β"
-                    2 -> "β ×4 | ${game.igniParts}/5 -> γ"
-                    else -> "γ ×8 MAX"
-                })
                 Text("CLIC TIRER  ·  CLIC DROIT / LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
                 if (game.message.isNotEmpty()) {
                     Text(game.message, fontSize = 9.sp, fontFamily = SMono, letterSpacing = 2.sp,
@@ -282,23 +276,61 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
 
             Box(Modifier.fillMaxWidth().height(1.dp).background(SBdr))
 
-            // Légende
-            Row(
-                Modifier.fillMaxWidth().background(SPanel).padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            // Barre Igni Terra
+            val igniColor = when (game.igniLevel) {
+                1    -> Color(0xFF884400)
+                2    -> Color(0xFFCC6600)
+                3    -> Color(0xFFFF4400)
+                else -> ST3
+            }
+            val igniLabel = when (game.igniLevel) {
+                1    -> "IGNI TERRA α"
+                2    -> "IGNI TERRA β"
+                3    -> "IGNI TERRA γ MAX"
+                else -> "IGNI TERRA"
+            }
+            Column(
+                Modifier.fillMaxWidth().background(SPanel)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                data class Legend(val label: String, val hp: Int, val pts: Int, val color: Color, val shape: String)
-                listOf(
-                    Legend("Cadavre",      1,  10, Color(0xFF4A7040), "▭"),
-                    Legend("Soldat mort",  2,  20, Color(0xFF4A7040), "●"),
-                    Legend("Centurion",    3,  35, Color(0xFF4A7040), "◆"),
-                    Legend("Colosse",      8, 100, SBoss,             "X"),
-                ).forEach { l ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(l.shape, fontSize = 11.sp, color = l.color)
-                        Text(l.label, fontSize = 7.sp, fontFamily = SMono, color = ST3)
-                        Text("(${l.hp}PV +${l.pts})", fontSize = 6.sp, fontFamily = SMono, color = ST3.copy(alpha = 0.6f))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(igniLabel, fontSize = 7.sp, fontFamily = SMono, color = igniColor, letterSpacing = 3.sp)
+                    Text(
+                        if (game.igniLevel >= 3) "PUISSANCE MAX" else "${game.igniParts}/5 pieces",
+                        fontSize = 7.sp, fontFamily = SMono, color = igniColor.copy(alpha = 0.7f)
+                    )
+                }
+                // Barre de progression
+                Box(Modifier.fillMaxWidth().height(6.dp).background(Color(0xFF0A1520))) {
+                    // Paliers franchis (segments pleins)
+                    val totalProgress = (game.igniLevel * 5 + game.igniParts) / 15f
+                    Box(
+                        Modifier.fillMaxHeight()
+                            .fillMaxWidth(totalProgress.coerceIn(0f, 1f))
+                            .background(igniColor)
+                    )
+                    // Séparateurs de palier
+                    listOf(1f/3f, 2f/3f).forEach { sep ->
+                        Box(
+                            Modifier.fillMaxHeight().width(2.dp)
+                                .offset(x = (sep * 600 - 1).dp)
+                                .background(SPanel)
+                        )
                     }
+                }
+                // Labels paliers
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("α", fontSize = 7.sp, fontFamily = SMono,
+                        color = if (game.igniLevel >= 1) Color(0xFF884400) else ST3.copy(alpha = 0.4f))
+                    Text("β", fontSize = 7.sp, fontFamily = SMono,
+                        color = if (game.igniLevel >= 2) Color(0xFFCC6600) else ST3.copy(alpha = 0.4f))
+                    Text("γ", fontSize = 7.sp, fontFamily = SMono,
+                        color = if (game.igniLevel >= 3) Color(0xFFFF4400) else ST3.copy(alpha = 0.4f))
                 }
             }
         }
