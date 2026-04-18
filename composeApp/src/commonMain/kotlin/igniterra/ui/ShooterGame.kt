@@ -347,7 +347,7 @@ class ShooterGame {
             // Lance une petite fille (phase enragée)
             if (alive && !won && boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
                 civilians.add(Civilian(x = boss.x - 0.05f, y = boss.y + (rng.nextFloat() - 0.5f) * 0.2f))
-                message = "⚠ IL LANCE UNE ENFANT !"
+                message = "!! IL LANCE UNE ENFANT !!"
             }
 
             // Collision balles joueur → boss (immunisé sans mode γ)
@@ -357,7 +357,7 @@ class ShooterGame {
                     if (!b.isFlame || igniLevel < 3) {
                         // Balle rejetée — boss immunisé
                         boss.shieldFlash = 12
-                        message = "⚠ UTILISEZ L'IGNI TERRA γ !"
+                        message = "!! IGNI TERRA γ REQUIS !!"
                         return@forEach
                     }
                     boss.hp -= b.damage
@@ -391,7 +391,7 @@ class ShooterGame {
                         girlsSaved++
                         CrackleSound.shooterGirlSaved()
                         lives = (lives + 1).coerceAtMost(9)
-                        civilianMessage = "SAUVÉE ! +50 +♥"
+                        civilianMessage = "SAUVEE ! +50 +VIE"
                         civilianMsgTimer = 120
                     }
                 }
@@ -426,7 +426,7 @@ class ShooterGame {
                             score += 50
                             girlsSaved++
                             lives = (lives + 1).coerceAtMost(9)
-                            civilianMessage = "SAUVÉE ! +50 +♥"
+                            civilianMessage = "SAUVEE ! +50 +VIE"
                             civilianMsgTimer = 120
                         }
                     }
@@ -434,9 +434,9 @@ class ShooterGame {
                         igniParts = 0
                         igniCharged = true
                         igniLevel = when {
-                            igniTotal >= 15 -> { message = "🔥 MODE γ — PUISSANCE MAXIMALE !"; 3 }
-                            igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
-                            else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
+                            igniTotal >= 15 -> { message = "MODE γ — PUISSANCE MAX !"; 3 }
+                            igniTotal >= 10 -> { message = "MODE β DEBLOQUE !"; 2 }
+                            else            -> { message = "MODE α DEBLOQUE !"; 1 }
                         }
                         CrackleSound.shooterLevelUp()
                     }
@@ -458,9 +458,9 @@ class ShooterGame {
                     igniParts = 0
                     igniCharged = true
                     igniLevel = when {
-                        igniTotal >= 15 -> { message = "🔥 MODE γ — PUISSANCE MAXIMALE !"; 3 }
-                        igniTotal >= 10 -> { message = "⚡ MODE β DÉBLOQUÉ !"; 2 }
-                        else            -> { message = "⚡ MODE α DÉBLOQUÉ !"; 1 }
+                        igniTotal >= 15 -> { message = "MODE γ — PUISSANCE MAX !"; 3 }
+                        igniTotal >= 10 -> { message = "MODE β DEBLOQUE !"; 2 }
+                        else            -> { message = "MODE α DEBLOQUE !"; 1 }
                     }
                     CrackleSound.shooterLevelUp()
                 }

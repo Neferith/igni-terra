@@ -125,10 +125,10 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "${game.lives}")
                 ShooterHud("IGNI", when (game.igniLevel) {
-                    0 -> "${game.igniParts}/5 → α"
-                    1 -> "α ×2 | ${game.igniParts}/5 → β"
-                    2 -> "β ×4 | ${game.igniParts}/5 → γ"
-                    else -> "γ ×8 🔥"
+                    0 -> "${game.igniParts}/5 -> α"
+                    1 -> "α ×2 | ${game.igniParts}/5 -> β"
+                    2 -> "β ×4 | ${game.igniParts}/5 -> γ"
+                    else -> "γ ×8 MAX"
                 })
                 Text("CLIC TIRER  ·  CLIC DROIT / LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
                 if (game.message.isNotEmpty()) {
@@ -146,11 +146,11 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
             ) {
                 Text("CIVILES", fontSize = 6.sp, letterSpacing = 2.sp, fontFamily = SMono, color = ST3)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("♥", fontSize = 10.sp, color = Color(0xFFFFB3C6))
+                    Text("(+)", fontSize = 10.sp, color = Color(0xFFFFB3C6))
                     Text("SAUVÉES : ${game.girlsSaved}", fontSize = 8.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("✕", fontSize = 10.sp, color = SRed)
+                    Text("(x)", fontSize = 10.sp, color = SRed)
                     Text("PERDUES : ${game.girlsLost}", fontSize = 8.sp, fontFamily = SMono, color = SRed)
                 }
                 if (game.civilianMessage.isNotEmpty()) {
@@ -256,8 +256,8 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                             Spacer(Modifier.height(6.dp))
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Text("♥ Sauvées : ${game.girlsSaved}", fontSize = 9.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
-                                Text("✕ Perdues : ${game.girlsLost}", fontSize = 9.sp, fontFamily = SMono,
+                                Text("(+) Sauvees : ${game.girlsSaved}", fontSize = 9.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
+                                Text("(x) Perdues : ${game.girlsLost}", fontSize = 9.sp, fontFamily = SMono,
                                     color = if (game.girlsLost > 0) SRed else ST3)
                             }
                             Spacer(Modifier.height(6.dp))
@@ -270,12 +270,11 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                 if (!game.started) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("APPUYEZ SUR DÉMARRER", fontSize = 10.sp, fontFamily = SMono,
+                            Text("APPUYEZ SUR DEMARRER", fontSize = 10.sp, fontFamily = SMono,
                                 color = STeal.copy(alpha = 0.6f), letterSpacing = 3.sp)
                             Spacer(Modifier.height(8.dp))
-                            Text("↑ / ↓  ou  W / S  —  déplacer", fontSize = 8.sp, fontFamily = SMono, color = ST3)
-                            Text("ESPACE  —  tirer", fontSize = 8.sp, fontFamily = SMono, color = ST3)
-                            Text("ÉCHAP  —  quitter", fontSize = 8.sp, fontFamily = SMono, color = ST3)
+                            Text("CLIC  --  viser et tirer", fontSize = 8.sp, fontFamily = SMono, color = ST3)
+                            Text("CLIC DROIT / LONG PRESS  --  grappin", fontSize = 8.sp, fontFamily = SMono, color = ST3)
                         }
                     }
                 }
@@ -293,7 +292,7 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                     Legend("Cadavre",      1,  10, Color(0xFF4A7040), "▭"),
                     Legend("Soldat mort",  2,  20, Color(0xFF4A7040), "●"),
                     Legend("Centurion",    3,  35, Color(0xFF4A7040), "◆"),
-                    Legend("Colosse",      8, 100, SBoss,             "✕"),
+                    Legend("Colosse",      8, 100, SBoss,             "X"),
                 ).forEach { l ->
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(l.shape, fontSize = 11.sp, color = l.color)
