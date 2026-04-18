@@ -28,18 +28,21 @@ import igniterra.CrackleSound
 import igniterra.strings.AppStrings
 import kotlinx.coroutines.delay
 
-private val SBg       = Color(0xFF02050A)
-private val SPanel    = Color(0xFF080F18)
-private val SBdr      = Color(0xFF1A2535)
-private val STeal     = Color(0xFF38C4C4)
+private val SBg       = Color(0xFF050A12)   // bleu nuit glacé
+private val SPanel    = Color(0xFF0A1220)   // panel nuit
+private val SBdr      = Color(0xFF1A2840)   // bordure bleue
+private val STeal     = Color(0xFF7EC8E3)   // bleu glace
 private val SRed      = Color(0xFFC84040)
-private val SGold     = Color(0xFFC8A44A)
-private val ST3       = Color(0xFF4A5568)
+private val SGold     = Color(0xFFCFE8FF)   // blanc glacé
+private val ST3       = Color(0xFF4A6880)   // bleu gris
 private val SMono     = FontFamily.Monospace
-private val SBullet   = Color(0xFFFFD700)
-private val SBoss     = Color(0xFFFF4444)
-private val SEnemy    = Color(0xFF8B4444)
-private val SExplosion= Color(0xFFFF8C00)
+private val SBullet   = Color(0xFFE8F4FF)   // blanc feu bleu
+private val SBoss     = Color(0xFF8B0000)   // rouge sang boss
+private val SEnemy    = Color(0xFF4A7040)   // vert putride
+private val SExplosion= Color(0xFF8B1A1A)   // sang
+private val SSnow     = Color(0xFFE8F0FF)   // neige
+private val SPutrid   = Color(0xFF6B8B3A)   // vert pourriture
+private val SBlood    = Color(0xFFAA1111)   // sang sombre
 
 // ── Overlay — structure identique à FpsView ───────────────────────────────────
 @Composable
@@ -281,10 +284,10 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
             ) {
                 data class Legend(val label: String, val hp: Int, val pts: Int, val color: Color, val shape: String)
                 listOf(
-                    Legend("Soldat",    1,  10, Color(0xFF8B4444), "▭"),
-                    Legend("Automate",  2,  20, Color(0xFF6B8CFF), "●"),
-                    Legend("Centurion", 3,  35, Color(0xFFB86BFF), "◆"),
-                    Legend("Légat",     8, 100, SBoss,             "✕"),
+                    Legend("Cadavre",      1,  10, Color(0xFF4A7040), "▭"),
+                    Legend("Soldat mort",  2,  20, Color(0xFF4A7040), "●"),
+                    Legend("Centurion",    3,  35, Color(0xFF4A7040), "◆"),
+                    Legend("Colosse",      8, 100, SBoss,             "✕"),
                 ).forEach { l ->
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(l.shape, fontSize = 11.sp, color = l.color)
@@ -304,7 +307,7 @@ fun ShooterFullScreen(
     onQuit    : () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        CrackleSound.playWav("ninjagaiden.mp3", loop = true)
+        recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() })
@@ -314,14 +317,23 @@ fun ShooterFullScreen(
 // ── Rendu Canvas ──────────────────────────────────────────────────────────────
 
 private fun DrawScope.drawShooterField(game: ShooterGame) {
+    val tick = game.tickCount
     val w = size.width
     val h = size.height
 
-    // Scanlines
-    var scanY = 0f
-    while (scanY < h) {
-        drawLine(Color(0xFF0A1520), Offset(0f, scanY), Offset(w, scanY), 0.5f)
-        scanY += h * 0.04f
+
+    drawRect(Color(0xFF0A1828), Offset(0f, 0f), Size(w, h))
+
+    val particleCount = 200
+
+    for (i in 0 until particleCount) {
+        val speedY = 0.4f + (i % 7) * 0.15f
+        val speedX = ((i % 9) - 4) * 0.07f
+        val fx = ((i * 127 + tick * speedX) % w + w) % w
+        val fy = ((i * 91  + tick * speedY) % h + h) % h
+        val radius = if (i % 5 == 0) 2.5f else if (i % 3 == 0) 1.5f else 1f
+        val alpha  = if (i % 5 == 0) 0.5f else if (i % 3 == 0) 0.3f else 0.15f
+        drawCircle(SSnow.copy(alpha = alpha), radius, Offset(fx, fy))
     }
 
     // Ligne de danger
@@ -339,10 +351,12 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
     game.bullets.filter { it.alive }.forEach { b ->
         val bx = b.x * w; val by = b.y * h
         if (b.isFlame) {
-            // Gerbe de feu — flamme orange/rouge
-            drawCircle(Color(0xFFFF4500), radius = 5f, center = Offset(bx, by))
-            drawCircle(Color(0xFFFFD700), radius = 2.5f, center = Offset(bx, by))
-            drawLine(Color(0xFFFF6B00).copy(alpha = 0.6f), Offset(bx - 14f, by), Offset(bx, by), 3f)
+            // Gerbe Igni Terra — flamme orange sur fond de glace
+            drawCircle(Color(0xFFFF6600), radius = 5f, center = Offset(bx, by))
+            drawCircle(Color(0xFFFFCC00), radius = 2.5f, center = Offset(bx, by))
+            drawLine(Color(0xFFFF4400).copy(alpha = 0.7f), Offset(bx - 14f, by), Offset(bx, by), 3f)
+            // Halo de chaleur (contraste avec le froid)
+            drawCircle(Color(0xFFFF6600).copy(alpha = 0.2f), radius = 9f, center = Offset(bx, by))
         } else {
             drawCircle(SBullet, radius = 3f, center = Offset(bx, by))
             drawLine(SBullet.copy(alpha = 0.4f), Offset(bx - 10f, by), Offset(bx, by), 1.5f)
@@ -362,41 +376,72 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
 
         when (z.type) {
             ZombieType.SOLDAT -> {
-                // Rectangle simple
+                // Cadavre animé — corps traînant, tête penchée
+                val sz = 10f
+                // Corps décharné
+                drawRect(color.copy(alpha = 0.2f), Offset(zx - sz/2, zy - sz * 0.8f), Size(sz, sz * 1.8f))
+                drawRect(color, Offset(zx - sz/2, zy - sz * 0.8f), Size(sz, sz * 1.8f), style = Stroke(1.5f))
+                // Tête penchée (légèrement décalée — mort)
+                drawCircle(color.copy(alpha = 0.25f), sz * 0.55f, Offset(zx + 2f, zy - sz * 1.2f))
+                drawCircle(color, sz * 0.55f, Offset(zx + 2f, zy - sz * 1.2f), style = Stroke(1f))
+                // Yeux creux rouges
+                drawCircle(SBlood, 1.5f, Offset(zx - 1f, zy - sz * 1.25f))
+                drawCircle(SBlood, 1.5f, Offset(zx + 4f, zy - sz * 1.25f))
+                // Bras traînant
+                drawLine(color, Offset(zx - sz/2, zy - sz * 0.4f), Offset(zx - sz/2 - 5f, zy + 3f), 1.5f)
+            }
+            ZombieType.AUTOMATE -> {
+                // Cadavre en armure rouillée — reste d'un soldat
                 val sz = 10f
                 drawRect(color.copy(alpha = 0.2f), Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f))
                 drawRect(color, Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f), style = Stroke(1.5f))
-            }
-            ZombieType.AUTOMATE -> {
-                // Cercle
-                val r = 8f
-                drawCircle(color.copy(alpha = 0.2f), r, Offset(zx, zy))
-                drawCircle(color, r, Offset(zx, zy), style = Stroke(1.5f))
-                // Antenne
-                drawLine(color, Offset(zx, zy - r), Offset(zx, zy - r - 5f), 1.5f)
-                drawCircle(color, 2f, Offset(zx, zy - r - 5f))
+                // Casque fendu
+                drawRect(color.copy(alpha = 0.3f), Offset(zx - sz/2 + 1f, zy - sz * 1.6f), Size(sz - 2f, sz * 0.7f))
+                drawRect(color, Offset(zx - sz/2 + 1f, zy - sz * 1.6f), Size(sz - 2f, sz * 0.7f), style = Stroke(1f))
+                // Fissure dans le casque
+                drawLine(SBlood, Offset(zx, zy - sz * 1.6f), Offset(zx + 2f, zy - sz * 0.95f), 1.5f)
+                // Yeux rougeoyants
+                drawCircle(SBlood.copy(alpha = 0.9f), 2f, Offset(zx - 2f, zy - sz * 1.25f))
+                drawCircle(SBlood.copy(alpha = 0.9f), 2f, Offset(zx + 3f, zy - sz * 1.25f))
             }
             ZombieType.CENTURION -> {
-                // Losange
-                val sz = 10f
-                val path = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(zx,      zy - sz * 1.4f)
-                    lineTo(zx + sz, zy)
-                    lineTo(zx,      zy + sz * 1.4f)
-                    lineTo(zx - sz, zy)
-                    close()
-                }
-                drawPath(path, color.copy(alpha = 0.2f))
-                drawPath(path, color, style = Stroke(1.5f))
+                // Cadavre massif — en décomposition avancée
+                val sz = 12f
+                drawRect(color.copy(alpha = 0.2f), Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f))
+                drawRect(color, Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f), style = Stroke(2f))
+                // Tête crâne visible
+                drawCircle(color.copy(alpha = 0.25f), sz * 0.5f, Offset(zx, zy - sz * 1.3f))
+                drawCircle(color, sz * 0.5f, Offset(zx, zy - sz * 1.3f), style = Stroke(1.5f))
+                // Orbites vides
+                drawCircle(Color(0xFF000000).copy(alpha = 0.8f), 2.5f, Offset(zx - 3f, zy - sz * 1.35f))
+                drawCircle(Color(0xFF000000).copy(alpha = 0.8f), 2.5f, Offset(zx + 3f, zy - sz * 1.35f))
+                // Lueur putride dans les orbites
+                drawCircle(SPutrid.copy(alpha = 0.7f), 1.5f, Offset(zx - 3f, zy - sz * 1.35f))
+                drawCircle(SPutrid.copy(alpha = 0.7f), 1.5f, Offset(zx + 3f, zy - sz * 1.35f))
+                // Taches putrides
+                drawCircle(SPutrid.copy(alpha = 0.3f), 3f, Offset(zx + 3f, zy))
+                drawCircle(SPutrid.copy(alpha = 0.25f), 2f, Offset(zx - 4f, zy + 4f))
             }
             ZombieType.BOSS -> {
-                // Croix / X
-                val sz = 14f
-                drawRect(color.copy(alpha = 0.15f), Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f))
-                drawRect(color, Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f), style = Stroke(2f))
-                // Croix intérieure
-                drawLine(color, Offset(zx - sz/2, zy - sz), Offset(zx + sz/2, zy + sz), 1.5f)
-                drawLine(color, Offset(zx + sz/2, zy - sz), Offset(zx - sz/2, zy + sz), 1.5f)
+                // Colosse de chair — cadavre géant recousu
+                val sz = 16f
+                drawRect(color.copy(alpha = 0.2f), Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f))
+                drawRect(color, Offset(zx - sz/2, zy - sz), Size(sz, sz * 2f), style = Stroke(2.5f))
+                // Tête déformée
+                drawCircle(color.copy(alpha = 0.25f), sz * 0.55f, Offset(zx, zy - sz * 1.3f))
+                drawCircle(color, sz * 0.55f, Offset(zx, zy - sz * 1.3f), style = Stroke(2f))
+                // Yeux rouges brillants
+                drawCircle(SBlood, 3.5f, Offset(zx - 4f, zy - sz * 1.35f))
+                drawCircle(SBlood, 3.5f, Offset(zx + 4f, zy - sz * 1.35f))
+                drawCircle(Color.White.copy(alpha = 0.6f), 1.5f, Offset(zx - 4f, zy - sz * 1.35f))
+                drawCircle(Color.White.copy(alpha = 0.6f), 1.5f, Offset(zx + 4f, zy - sz * 1.35f))
+                // Cicatrices / sutures
+                drawLine(SBlood.copy(alpha = 0.6f), Offset(zx - sz/2, zy - 4f), Offset(zx + sz/2, zy - 4f), 1.5f)
+                drawLine(SBlood.copy(alpha = 0.4f), Offset(zx - sz/2, zy + 4f), Offset(zx + sz/2, zy + 4f), 1f)
+                drawLine(SBlood.copy(alpha = 0.5f), Offset(zx, zy - sz), Offset(zx, zy + sz), 1f)
+                // Bras épais
+                drawLine(color, Offset(zx - sz/2, zy - sz * 0.3f), Offset(zx - sz/2 - 8f, zy + 4f), 3f)
+                drawLine(color, Offset(zx + sz/2, zy - sz * 0.3f), Offset(zx + sz/2 + 8f, zy + 4f), 3f)
             }
         }
 
@@ -504,8 +549,8 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         val cx = c.x * w
         val cy = c.y * h
         val skin  = Color(0xFFFFD5B0)
-        val dress = Color(0xFFFF80AB)
-        val hair  = Color(0xFF8B4513)
+        val dress = Color(0xFF4A90D9)   // robe bleue (contrast Coerthas)
+        val hair  = Color(0xFFCC4400)   // roux vif
 
         // Nattes — deux petits cercles de chaque côté de la tête
         drawCircle(hair, 3f, Offset(cx - 6f, cy - 12f))
@@ -541,13 +586,24 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         drawCircle(Color(0xFFFFD700).copy(alpha = 0.9f), 3f, Offset(cx, cy - 22f))
     }
 
-    // Explosions
+    // Explosions — sang et putréfaction
     game.explosions.forEach { e ->
         val ex = e.x * w; val ey = e.y * h
-        val alpha = e.frames / 8f
-        val r = (8 - e.frames) * 5f + 4f
-        drawCircle(SExplosion.copy(alpha = alpha * 0.8f), r, Offset(ex, ey))
-        drawCircle(Color.White.copy(alpha = alpha * 0.4f), r * 0.5f, Offset(ex, ey))
+        val alpha = (e.frames / 8f).coerceIn(0f, 1f)
+        val r = (8 - e.frames) * 4f + 4f
+        // Halo sanguin
+        drawCircle(SBlood.copy(alpha = alpha * 0.4f), r * 1.4f, Offset(ex, ey))
+        drawCircle(SExplosion.copy(alpha = alpha * 0.7f), r, Offset(ex, ey))
+        // Matière putride au centre
+        drawCircle(SPutrid.copy(alpha = alpha * 0.5f), r * 0.5f, Offset(ex, ey))
+        // Éclaboussures
+        for (j in 0..7) {
+            val angle = (j * 45f) * (kotlin.math.PI / 180f)
+            val dist  = r * (0.8f + (j % 3) * 0.3f)
+            val ex2 = ex + dist * kotlin.math.cos(angle).toFloat()
+            val ey2 = ey + dist * kotlin.math.sin(angle).toFloat()
+            drawCircle(SBlood.copy(alpha = alpha * 0.5f), 2f, Offset(ex2, ey2))
+        }
     }
 }
 
