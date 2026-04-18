@@ -685,4 +685,46 @@ actual object CrackleSound {
             } catch (_: Exception) {}
         }, "igniterra-dungeonVictory").also { it.isDaemon = true; it.start() }
     }
+
+    actual fun laugh() {
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                // "Ha ha ha ha ha" — 5 bursts de 120ms séparés de 80ms de silence
+                val burstSamples = (SAMPLE_RATE * 0.12).toInt()
+                val silenceSamples = (SAMPLE_RATE * 0.08).toInt()
+                val totalSamples = (burstSamples + silenceSamples) * 5 + (SAMPLE_RATE * 0.5).toInt()
+                val buf = ByteArray(totalSamples * 2)
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size * 2)
+                line.start()
+                var i = 0
+                val baseFreq = 280.0  // voix grave, ricanement
+                repeat(5) { burst ->
+                    val freqMod = baseFreq + burst * 8.0  // monte légèrement
+                    val end = i + burstSamples
+                    while (i < end && i < totalSamples) {
+                        val t = (i - (burst * (burstSamples + silenceSamples))).toDouble() / SAMPLE_RATE
+                        val env = kotlin.math.sin(Math.PI * t / (burstSamples.toDouble() / SAMPLE_RATE)).coerceIn(0.0, 1.0)
+                        val s = kotlin.math.sin(2.0 * Math.PI * freqMod * t) *
+                                (0.5 + 0.3 * kotlin.math.sin(2.0 * Math.PI * 8.0 * t)) *
+                                env * 0.45 * globalVolume
+                        val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                        buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                        buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                        i++
+                    }
+                    // Silence entre les ha
+                    val silEnd = i + silenceSamples
+                    while (i < silEnd && i < totalSamples) { buf[i*2] = 0; buf[i*2+1] = 0; i++ }
+                }
+                // Silence final
+                while (i < totalSamples) { buf[i*2] = 0; buf[i*2+1] = 0; i++ }
+                line.write(buf, 0, buf.size)
+                line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "igniterra-laugh").also { it.isDaemon = true; it.start() }
+    }
+
+
 }

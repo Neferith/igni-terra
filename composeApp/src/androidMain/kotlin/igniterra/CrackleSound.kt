@@ -325,4 +325,6 @@ actual object CrackleSound {
         }, "igniterra-dungeon").also { it.isDaemon = true; it.start() }
     }
 
+    actual fun laugh() { /* TODO: Android AudioTrack implementation */ }
+
 }

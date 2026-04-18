@@ -27,4 +27,6 @@ expect object CrackleSound {
     fun dungeonLevelUp()
     fun dungeonGameOver()
     fun dungeonVictory()
+
+    fun laugh()
 }

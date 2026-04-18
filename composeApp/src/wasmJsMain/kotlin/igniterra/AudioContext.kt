@@ -237,6 +237,33 @@ private fun playTonesWasm(notes: List<Pair<Float, Int>>, vol: Float, wave: Strin
     jsPlayTones(arr, vol, wave)
 }
 
+@JsFun("""() => {
+    const ctx = window._igniterra_ctx;
+    if (!ctx) return;
+    const out = window._igniterra_gain || ctx.destination;
+    const now = ctx.currentTime;
+    const freqs = [140, 150, 155, 150, 140, 135];
+    freqs.forEach((freq, i) => {
+        const t = now + i * 0.28;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.55, t + 0.22);
+        gain.gain.setValueAtTime(0.0, t);
+        gain.gain.linearRampToValueAtTime(0.6, t + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+        osc.connect(gain);
+        gain.connect(out);
+        osc.start(t);
+        osc.stop(t + 0.25);
+    });
+}""")
+private external fun jsLaugh()
+
+
+
+
 actual object CrackleSound {
     actual fun start()                      {}
     actual fun stop()                       {}
@@ -248,6 +275,8 @@ actual object CrackleSound {
     actual fun setVolume(volume: Float)     = jsSetVolume(volume)
     actual fun snakeEat()                   = jsSnakeEat()
     actual fun snakeDie()                   = jsSnakeDie()
+
+    actual fun laugh()         { jsInitCtx(); jsLaugh() }
 
     actual fun playWav(filename: String, loop: Boolean) = jsPlayWav(filename, loop)
     actual fun stopWav()                        = jsStopWav()

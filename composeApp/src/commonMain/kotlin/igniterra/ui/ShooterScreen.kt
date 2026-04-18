@@ -304,7 +304,7 @@ fun ShooterFullScreen(
     onQuit    : () -> Unit
 ) {
     LaunchedEffect(Unit) {
-        recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        CrackleSound.playWav("ninjagaiden.mp3", loop = true)
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() })
