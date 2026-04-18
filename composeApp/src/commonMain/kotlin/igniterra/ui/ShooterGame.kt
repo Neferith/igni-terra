@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import igniterra.CrackleSound
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -200,6 +201,7 @@ class ShooterGame {
             if (z.x <= 0.08f) {
                 z.alive = false
                 lives = (lives - 1).coerceAtLeast(0)
+                CrackleSound.shooterPlayerHit()
                 explosions.add(Explosion(z.x, z.y))
                 if (lives <= 0) { alive = false; message = "GAME OVER" }
             }
@@ -216,6 +218,7 @@ class ShooterGame {
             zombies.filter { it.alive }.forEach { z ->
                 if (b.alive && abs(b.x - z.x) < 0.05f && abs(b.y - z.y) < 0.06f) {
                     z.hp -= b.damage; z.hitFlash = 4; b.alive = false
+                    CrackleSound.shooterFleshHit()
                     dmgNumbers.add(DamageNumber(z.x, z.y, b.damage))
                     if (z.hp <= 0) {
                         z.alive = false
@@ -282,6 +285,7 @@ class ShooterGame {
                 c.saved = true
                 score += 50
                 girlsSaved++
+                CrackleSound.shooterGirlSaved()
                 civilianMessage = "SAUVÉE ! +50"
                 civilianMsgTimer = 120
                 deadCivilians.add(c)
@@ -291,6 +295,7 @@ class ShooterGame {
                 c.saved = false
                 badEnding = true
                 girlsLost++
+                CrackleSound.shooterGirlKilled()
                 civilianMessage = "UNE ENFANT EST PERDUE..."
                 civilianMsgTimer = 180
                 deadCivilians.add(c)
@@ -308,6 +313,7 @@ class ShooterGame {
                     explosions.add(Explosion(c.x, c.y))
                     girlsLost++
                     badEnding = true
+                    CrackleSound.shooterGirlKilled()
                     civilianMessage = "TU L'AS TUÉE !"
                     civilianMsgTimer = 120
                     if (lives <= 0) { alive = false; message = "GAME OVER" }
@@ -374,6 +380,7 @@ class ShooterGame {
                         c.saved = true
                         score += 50
                         girlsSaved++
+                        CrackleSound.shooterGirlSaved()
                         lives = (lives + 1).coerceAtMost(9)
                         civilianMessage = "SAUVÉE ! +50 +♥"
                         civilianMsgTimer = 120
@@ -399,6 +406,7 @@ class ShooterGame {
                     val picked = parts.firstOrNull { it.alive && it.id == g.targetId }
                     if (picked != null) {
                         picked.alive = false
+                        CrackleSound.shooterPartPickup()
                         igniParts++
                         igniTotal++
                     }
@@ -433,6 +441,7 @@ class ShooterGame {
             if (!p.alive) { deadParts.add(p); return@forEach }
             if (kotlin.math.abs(p.x - 0.08f) < 0.05f && kotlin.math.abs(p.y - playerY) < 0.07f) {
                 p.alive = false
+                CrackleSound.shooterPartPickup()
                 igniParts++
                 igniTotal++
                 if (igniParts >= 5) {

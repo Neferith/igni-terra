@@ -726,5 +726,130 @@ actual object CrackleSound {
         }, "igniterra-laugh").also { it.isDaemon = true; it.start() }
     }
 
+    actual fun shooterFleshHit() {
+        // Bruit sourd + bruit blanc court — "chair arrachée"
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (SAMPLE_RATE * 0.08).toInt()
+                val buf = ByteArray(samples * 2)
+                val rng = java.util.Random(42)
+                for (i in 0 until samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val env = kotlin.math.exp(-t * 40.0)
+                    // Bruit blanc filtré bas
+                    val noise = (rng.nextDouble() * 2 - 1) * 0.4
+                    val thud = kotlin.math.sin(2.0 * Math.PI * 80.0 * t) * 0.5
+                    val s = (noise + thud) * env * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-flesh").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun shooterGirlSaved() {
+        // Deux notes montantes — victoire légère
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (SAMPLE_RATE * 0.35).toInt()
+                val buf = ByteArray(samples * 2)
+                val notes = listOf(523.0 to 0, 784.0 to (SAMPLE_RATE * 0.18).toInt())
+                for (i in 0 until samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val freq = if (i < notes[1].second) notes[0].first else notes[1].first
+                    val phase = i - (if (i >= notes[1].second) notes[1].second else 0)
+                    val env = kotlin.math.exp(-phase.toDouble() / SAMPLE_RATE * 8.0)
+                    val s = kotlin.math.sin(2.0 * Math.PI * freq * phase.toDouble() / SAMPLE_RATE) * env * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-saved").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun shooterGirlKilled() {
+        // Deux notes descendantes — défaite triste
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (SAMPLE_RATE * 0.5).toInt()
+                val buf = ByteArray(samples * 2)
+                val split = (SAMPLE_RATE * 0.22).toInt()
+                for (i in 0 until samples) {
+                    val (freq, phase) = if (i < split) 392.0 to i else 262.0 to (i - split)
+                    val env = kotlin.math.exp(-phase.toDouble() / SAMPLE_RATE * 5.0)
+                    val s = kotlin.math.sin(2.0 * Math.PI * freq * phase.toDouble() / SAMPLE_RATE) * env * 0.4 * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-killed").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun shooterPartPickup() {
+        // Clic métallique + montée — recharge d'arme
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (SAMPLE_RATE * 0.15).toInt()
+                val buf = ByteArray(samples * 2)
+                for (i in 0 until samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    // Fréquence qui monte rapidement
+                    val freq = 200.0 + (i.toDouble() / samples) * 800.0
+                    val env = kotlin.math.exp(-t * 15.0) * 0.5 + kotlin.math.exp(-t * 3.0) * 0.3
+                    val s = kotlin.math.sin(2.0 * Math.PI * freq * t) * env * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-pickup").also { it.isDaemon = true; it.start() }
+    }
+
+    actual fun shooterPlayerHit() {
+        // Impact sourd + distorsion — coup reçu
+        Thread({
+            try {
+                val format = AudioFormat(SAMPLE_RATE, 16, 1, true, false)
+                val samples = (SAMPLE_RATE * 0.12).toInt()
+                val buf = ByteArray(samples * 2)
+                val rng = java.util.Random(99)
+                for (i in 0 until samples) {
+                    val t = i.toDouble() / SAMPLE_RATE
+                    val env = kotlin.math.exp(-t * 25.0)
+                    val thud = kotlin.math.sin(2.0 * Math.PI * 55.0 * t) * 0.6
+                    val crack = (rng.nextDouble() * 2 - 1) * 0.5 * kotlin.math.exp(-t * 80.0)
+                    val s = (thud + crack) * env * globalVolume
+                    val sample = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+                    buf[i*2] = (sample.toInt() and 0xFF).toByte()
+                    buf[i*2+1] = (sample.toInt() shr 8).toByte()
+                }
+                val line = AudioSystem.getSourceDataLine(format)
+                line.open(format, buf.size); line.start()
+                line.write(buf, 0, buf.size); line.drain(); line.close()
+            } catch (_: Exception) {}
+        }, "shooter-playerhit").also { it.isDaemon = true; it.start() }
+    }
 
 }
+
+
+

@@ -29,4 +29,12 @@ expect object CrackleSound {
     fun dungeonVictory()
 
     fun laugh()
+
+
+    // Shooter
+    fun shooterFleshHit()      // monstre touché — morceau arraché
+    fun shooterGirlSaved()     // petite fille sauvée
+    fun shooterGirlKilled()    // petite fille tuée
+    fun shooterPartPickup()    // pièce Igni Terra ramassée
+    fun shooterPlayerHit()     // monstre dans notre camp
 }

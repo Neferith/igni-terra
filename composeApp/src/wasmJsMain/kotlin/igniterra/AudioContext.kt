@@ -287,4 +287,10 @@ actual object CrackleSound {
     actual fun dungeonLevelUp()    = playTonesWasm(listOf(262f to 80, 330f to 80, 392f to 80, 523f to 80, 659f to 80, 784f to 160), 0.35f, "sine")
     actual fun dungeonGameOver()   = playTonesWasm(listOf(330f to 150, 294f to 150, 262f to 150, 220f to 300), 0.35f, "square")
     actual fun dungeonVictory()    = playTonesWasm(listOf(523f to 80, 523f to 80, 523f to 80, 415f to 240, 466f to 80, 523f to 320, 466f to 80, 523f to 400), 0.4f, "square")
+
+    actual fun shooterFleshHit()   { jsInitCtx(); playTonesWasm(listOf(80f to 60, 60f to 40), 0.5f, "sawtooth") }
+    actual fun shooterGirlSaved()  { jsInitCtx(); playTonesWasm(listOf(523f to 100, 784f to 180), 0.4f, "sine") }
+    actual fun shooterGirlKilled() { jsInitCtx(); playTonesWasm(listOf(392f to 200, 262f to 280), 0.4f, "sine") }
+    actual fun shooterPartPickup() { jsInitCtx(); playTonesWasm(listOf(220f to 40, 440f to 40, 880f to 80), 0.35f, "square") }
+    actual fun shooterPlayerHit()  { jsInitCtx(); playTonesWasm(listOf(55f to 80, 40f to 60), 0.6f, "sawtooth") }
 }

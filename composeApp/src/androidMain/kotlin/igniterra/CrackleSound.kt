@@ -327,4 +327,10 @@ actual object CrackleSound {
 
     actual fun laugh() { /* TODO: Android AudioTrack implementation */ }
 
+    actual fun shooterFleshHit()   {}
+    actual fun shooterGirlSaved()  {}
+    actual fun shooterGirlKilled() {}
+    actual fun shooterPartPickup() {}
+    actual fun shooterPlayerHit()  {}
+
 }
