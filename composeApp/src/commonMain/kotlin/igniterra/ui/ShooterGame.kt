@@ -351,7 +351,7 @@ class ShooterGame {
             boss.y += ((if (boss.phase == 0) 0.004f else 0.007f) * kotlin.math.sin(tickCount * 0.05)).toFloat()
 
             // Tir de missiles
-            val fireRate = if (boss.phase == 0) 0.015f else 0.030f
+            val fireRate = if (boss.phase == 0) 0.045f else 0.065f
             if (rng.nextFloat() < fireRate) {
                 val targetY = playerY
                 val dy = (targetY - boss.y).coerceIn(-0.5f, 0.5f)

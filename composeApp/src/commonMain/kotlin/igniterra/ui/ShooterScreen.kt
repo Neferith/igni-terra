@@ -174,6 +174,18 @@ fun ShooterOverlay(onDismiss: () -> Unit) {
                             }
                         )
                     }
+                    .pointerInput("mousemove") {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == androidx.compose.ui.input.pointer.PointerEventType.Move) {
+                                    val ny = event.changes.firstOrNull()?.position?.y
+                                        ?.div(size.height.toFloat()) ?: return@awaitPointerEventScope
+                                    game.playerY = ny.coerceIn(0.05f, 0.95f)
+                                }
+                            }
+                        }
+                    }
                     .pointerInput("rightclick") {
                         awaitPointerEventScope {
                             while (true) {
