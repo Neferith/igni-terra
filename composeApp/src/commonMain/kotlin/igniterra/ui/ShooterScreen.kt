@@ -46,7 +46,7 @@ private val SBlood    = Color(0xFFAA1111)   // sang sombre
 
 // ── Overlay — structure identique à FpsView ───────────────────────────────────
 @Composable
-fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false) {
+fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((Boolean) -> Unit)? = null) {
     val game           = remember { ShooterGame() }
     val scope          = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
@@ -67,7 +67,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false) {
 
     // Retour auto
     LaunchedEffect(game.alive, game.won) {
-        if (!game.alive || game.won) {
+        if (!game.alive && !game.won) {
             delay(3000L)
             onDismiss()
         }
@@ -309,8 +309,28 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false) {
                                     color = if (game.girlsLost > 0) SRed else ST3)
                             }
                             Spacer(Modifier.height(6.dp))
-                            Text("Score final : ${game.score}", fontSize = 11.sp, fontFamily = SMono, color = ST3)
-                            Text("Retour dans 3s...", fontSize = 8.sp, fontFamily = SMono, color = ST3)
+                            Text("Score final : \${game.score}", fontSize = 11.sp, fontFamily = SMono, color = ST3)
+                            if (game.won) {
+                                Spacer(Modifier.height(12.dp))
+                                Box(
+                                    Modifier
+                                        .border(1.dp, if (isBadEnding) Color(0xFFFF6B00) else SGold)
+                                        .clickable { onEnd?.invoke(isBadEnding) }
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        if (isBadEnding)
+                                            "On se decourage, Adrila ? Viens ici !"
+                                        else
+                                            "Felicitation, Adrila ! Viens ici !",
+                                        fontSize = 9.sp, fontFamily = SMono,
+                                        color = if (isBadEnding) Color(0xFFFF6B00) else SGold,
+                                        letterSpacing = 1.sp
+                                    )
+                                }
+                            } else {
+                                Text("MISSION ECHOUEE", fontSize = 8.sp, fontFamily = SMono, color = SRed, letterSpacing = 3.sp)
+                            }
                         }
                     }
                 }
@@ -395,13 +415,18 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false) {
 @Composable
 fun ShooterFullScreen(
     recipient : AppStrings.Recipient,
-    onQuit    : () -> Unit
+    onQuit    : () -> Unit,
+    onEnd     : ((Boolean) -> Unit)? = null  // true = mauvaise fin
 ) {
     LaunchedEffect(Unit) {
         recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
-        ShooterOverlay(onDismiss = { CrackleSound.stopWav(); onQuit() }, autoStart = true)
+        ShooterOverlay(
+            onDismiss = { CrackleSound.stopWav(); onQuit() },
+            onEnd     = onEnd,
+            autoStart = true
+        )
     }
 }
 

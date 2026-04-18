@@ -87,7 +87,8 @@ fun ManualApp() {
 
     if (recipient != null && recipient!!.hasGameAccess) {
         var introShown by remember { mutableStateOf(false) }
-        if (!introShown) {
+        var gameResult by remember { mutableStateOf<Boolean?>(null) }
+       /* if (!introShown) {
             IgniTerraIntro(
                 introText  = "Mon amour,\n" +
                         "Elea est en danger. Les morts-vivants sont partout et elle s’est perdue dans le Coerthas. Va, c'est ta mission aujourd'hui. Prends l’Igni Terra et va la sauver. Je t’en prie mon amour, je compte sur toi.\n" +
@@ -99,6 +100,24 @@ fun ManualApp() {
             ShooterFullScreen(
                 recipient = recipient!!,
                 onQuit    = { /*recipient = null*/ }
+            )
+        }*/
+        when {
+            !introShown -> IgniTerraIntro(
+                introText  = "Mon amour,\n" +
+                        "Elea est en danger. Les morts-vivants sont partout et elle s'est perdue dans le Coerthas. Va, c'est ta mission aujourd'hui. Prends l'Igni Terra et va la sauver. Je t'en prie mon amour, je compte sur toi.\n" +
+                        "Et surtout, n'oublie pas. On peut sauver mille fois Elea, mais on ne peut la tuer qu'une seule fois.\n" +
+                        "Eleanor Dubrie\n",
+                onComplete = { introShown = true }
+            )
+            gameResult != null -> EndScreen(
+                isBadEnding = gameResult!!,
+                onQuit      = { recipient = null }
+            )
+            else -> ShooterFullScreen(
+                recipient = recipient!!,
+                onQuit    = { recipient = null },
+                onEnd     = { badEnding -> gameResult = badEnding }
             )
         }
         return
