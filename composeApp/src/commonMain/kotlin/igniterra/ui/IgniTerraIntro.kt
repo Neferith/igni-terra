@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import igniterra.CrackleSound
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.*
 
 private val IBg    = Color(0xFF02050A)
@@ -76,10 +77,13 @@ fun IgniTerraIntro(
                 // Déclenche le rire quand la phrase clé est complète
                 if (!laughTriggered && displayedText.contains(laughTrigger)) {
                     laughTriggered = true
-                    delay(300L)
-                    CrackleSound.stopWav()  // arrête la boite à musique
-                    delay(200L)             // silence avant le rire
-                    CrackleSound.playWav("rire.mp3", loop = false)
+                    // Lance le son sans bloquer le typewriter
+                    kotlinx.coroutines.GlobalScope.launch {
+                        delay(300L)
+                        CrackleSound.stopWav()
+                        delay(200L)
+                        CrackleSound.playWav("rire.mp3", loop = false)
+                    }
                 }
                 delay(charDelay)
             }
