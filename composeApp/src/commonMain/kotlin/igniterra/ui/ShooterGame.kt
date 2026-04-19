@@ -15,10 +15,10 @@ enum class ZombieType(
     val speed  : Float,
     val points : Int
 ) {
-    SOLDAT    ("S", "Soldat Zombifié",    1, 0.006f, 10),
-    AUTOMATE  ("A", "Automate Corrompu",  2, 0.004f, 20),
-    CENTURION ("C", "Centurion Mort",     3, 0.003f, 35),
-    BOSS      ("X", "Légat Maudit",       8, 0.002f, 100),
+    SOLDAT    ("S", "Soldat Zombifié",    1,  0.006f, 10),
+    AUTOMATE  ("A", "Automate Corrompu",  2,  0.004f, 20),
+    CENTURION ("C", "Centurion Mort",     4,  0.003f, 35),
+    BOSS      ("X", "Légat Maudit",       16, 0.002f, 100),
 }
 
 data class Zombie(
@@ -93,12 +93,22 @@ data class Civilian(
 )
 
 
+private val S = ZombieType.SOLDAT
+private val A = ZombieType.AUTOMATE
+private val C = ZombieType.CENTURION
+private val B = ZombieType.BOSS
+
 private val WAVES = listOf(
-    listOf(ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT, ZombieType.SOLDAT),
-    listOf(ZombieType.SOLDAT, ZombieType.AUTOMATE, ZombieType.SOLDAT, ZombieType.AUTOMATE, ZombieType.SOLDAT, ZombieType.AUTOMATE, ZombieType.SOLDAT, ZombieType.AUTOMATE, ZombieType.SOLDAT),
-    listOf(ZombieType.AUTOMATE, ZombieType.CENTURION, ZombieType.AUTOMATE, ZombieType.CENTURION, ZombieType.AUTOMATE, ZombieType.CENTURION, ZombieType.AUTOMATE, ZombieType.CENTURION, ZombieType.AUTOMATE),
-    listOf(ZombieType.SOLDAT, ZombieType.CENTURION, ZombieType.BOSS, ZombieType.CENTURION, ZombieType.SOLDAT, ZombieType.CENTURION, ZombieType.BOSS, ZombieType.CENTURION, ZombieType.SOLDAT),
-    listOf(ZombieType.AUTOMATE, ZombieType.BOSS, ZombieType.CENTURION, ZombieType.BOSS, ZombieType.AUTOMATE, ZombieType.BOSS, ZombieType.CENTURION, ZombieType.BOSS, ZombieType.AUTOMATE),
+    // Vague 1 — 12 soldats, intro douce
+    listOf(S,S,S,S,S,S,S,S,S,S,S,S),
+    // Vague 2 — 16 ennemis, soldats + automates
+    listOf(S,S,A,S,S,A,S,A,S,S,A,S,A,S,S,A),
+    // Vague 3 — 20 ennemis, mix automates/centurions
+    listOf(A,C,A,A,C,A,C,A,A,C,A,C,A,A,C,A,C,A,A,C),
+    // Vague 4 — 24 ennemis, centurions + boss mini
+    listOf(S,C,B,C,S,C,A,B,C,S,C,B,A,C,S,B,C,A,C,S,C,B,C,S),
+    // Vague 5 — 28 ennemis, chaos total
+    listOf(A,B,C,B,A,C,B,A,B,C,A,B,C,B,A,C,B,A,B,C,A,B,C,B,A,C,B,A),
 )
 
 class ShooterGame {
