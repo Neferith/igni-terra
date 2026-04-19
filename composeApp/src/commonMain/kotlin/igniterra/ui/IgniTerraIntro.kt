@@ -4,6 +4,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -109,7 +111,10 @@ fun IgniTerraIntro(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 32.dp)
         ) {
             Text(
                 "AUTORITÉ MAGITEK GARLEAN",

@@ -363,6 +363,21 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
                 3    -> "IGNI TERRA γ MAX"
                 else -> "IGNI TERRA"
             }
+            // Progression dans le palier courant
+            val igniPiecesLabel = when (game.igniLevel) {
+                0    -> "${game.igniTotal}/5 pieces"
+                1    -> "${game.igniTotal - 5}/10 pieces"
+                2    -> "${game.igniTotal - 15}/20 pieces"
+                else -> "PUISSANCE MAX"
+            }
+            // Progression globale 0..1 sur toute la barre (seuils 5/15/35)
+            val totalProgress = when (game.igniLevel) {
+                0    -> (game.igniTotal / 5f)           / 3f
+                1    -> (1f + (game.igniTotal - 5f)  / 10f) / 3f
+                2    -> (2f + (game.igniTotal - 15f) / 20f) / 3f
+                else -> 1f
+            }.coerceIn(0f, 1f)
+
             Column(
                 Modifier.fillMaxWidth().background(SPanel)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -374,18 +389,13 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(igniLabel, fontSize = 7.sp, fontFamily = SMono, color = igniColor, letterSpacing = 3.sp)
-                    Text(
-                        if (game.igniLevel >= 3) "PUISSANCE MAX" else "${game.igniParts}/5 pieces",
-                        fontSize = 7.sp, fontFamily = SMono, color = igniColor.copy(alpha = 0.7f)
-                    )
+                    Text(igniPiecesLabel, fontSize = 7.sp, fontFamily = SMono, color = igniColor.copy(alpha = 0.7f))
                 }
                 // Barre de progression
                 Box(Modifier.fillMaxWidth().height(6.dp).background(Color(0xFF0A1520))) {
-                    // Paliers franchis (segments pleins)
-                    val totalProgress = (game.igniLevel * 5 + game.igniParts) / 15f
                     Box(
                         Modifier.fillMaxHeight()
-                            .fillMaxWidth(totalProgress.coerceIn(0f, 1f))
+                            .fillMaxWidth(totalProgress)
                             .background(igniColor)
                     )
                     // Séparateurs de palier

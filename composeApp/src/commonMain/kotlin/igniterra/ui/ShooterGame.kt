@@ -187,6 +187,35 @@ class ShooterGame {
         }
     }
 
+    private fun checkIgniLevel() {
+        val prevLevel = igniLevel
+        val newLevel = when {
+            igniTotal >= 35 -> 3
+            igniTotal >= 15 -> 2
+            igniTotal >= 5  -> 1
+            else            -> 0
+        }
+        if (newLevel > prevLevel) {
+            igniLevel = newLevel
+            igniCharged = true
+            when (newLevel) {
+                3 -> showMessage("MODE γ — PUISSANCE MAX !", 200, priority = 7)
+                2 -> showMessage("MODE β DEBLOQUE !", 180, priority = 7)
+                1 -> showMessage("MODE α DEBLOQUE !", 180, priority = 7)
+            }
+            CrackleSound.shooterLevelUp()
+        } else if (igniTotal >= 5) {
+            igniCharged = true
+        }
+        // igniParts affiche la progression vers le prochain palier
+        igniParts = when {
+            igniTotal >= 35 -> 20  // max
+            igniTotal >= 15 -> igniTotal - 15
+            igniTotal >= 5  -> igniTotal - 5
+            else            -> igniTotal
+        }
+    }
+
     fun moveUp()   { if (alive && started) playerY = (playerY - 0.04f).coerceAtLeast(0.05f) }
     fun moveDown() { if (alive && started) playerY = (playerY + 0.04f).coerceAtMost(0.95f) }
 
@@ -471,16 +500,7 @@ class ShooterGame {
                             civilianMsgTimer = 120
                         }
                     }
-                    if (igniParts >= 5) {
-                        igniParts = 0
-                        igniCharged = true
-                        igniLevel = when {
-                            igniTotal >= 15 -> { showMessage("MODE γ — PUISSANCE MAX !", 200); 3 }
-                            igniTotal >= 10 -> { showMessage("MODE β DEBLOQUE !", 180); 2 }
-                            else            -> { showMessage("MODE α DEBLOQUE !", 180); 1 }
-                        }
-                        CrackleSound.shooterLevelUp()
-                    }
+                    checkIgniLevel()
                     g.active = false
                 }
             }
@@ -495,16 +515,7 @@ class ShooterGame {
                 CrackleSound.shooterPartPickup()
                 igniParts++
                 igniTotal++
-                if (igniParts >= 5) {
-                    igniParts = 0
-                    igniCharged = true
-                    igniLevel = when {
-                        igniTotal >= 15 -> { showMessage("MODE γ — PUISSANCE MAX !", 200); 3 }
-                        igniTotal >= 10 -> { showMessage("MODE β DEBLOQUE !", 180); 2 }
-                        else            -> { showMessage("MODE α DEBLOQUE !", 180); 1 }
-                    }
-                    CrackleSound.shooterLevelUp()
-                }
+                checkIgniLevel()
             }
         }
         deadParts.forEach { parts.remove(it) }
