@@ -143,6 +143,7 @@ class ShooterGame {
 
     // Position du joueur (0.0 = haut, 1.0 = bas)
     var playerY        by mutableStateOf(0.5f)
+    var playerHitFlash by mutableStateOf(0)
     var civilianMessage by mutableStateOf("")  // "SAUVÉE !" ou "TU L'AS TUÉE !"
     var civilianMsgTimer = 0
 
@@ -153,6 +154,7 @@ class ShooterGame {
     fun start() {
         score = 0; lives = 3; wave = 0; alive = true; won = false
         playerY = 0.5f
+        playerHitFlash = 0
         badEnding = false
         girlsSaved = 0
         girlsLost = 0
@@ -518,11 +520,17 @@ class ShooterGame {
             if (abs(m.x - 0.08f) < 0.05f && abs(m.y - playerY) < 0.05f) {
                 m.alive = false
                 lives = (lives - 1).coerceAtLeast(0)
+                playerHitFlash = 20
+                CrackleSound.shooterPlayerHit()
                 explosions.add(Explosion(m.x, m.y))
+                explosions.add(Explosion(m.x + 0.02f, m.y - 0.02f))
+                explosions.add(Explosion(m.x - 0.02f, m.y + 0.02f))
                 if (lives <= 0) { alive = false; message = "GAME OVER" }
             }
         }
         deadMissiles.forEach { missiles.remove(it) }
+
+        if (playerHitFlash > 0) playerHitFlash--
 
         // Damage numbers
         dmgNumbers.removeAll { d -> d.frames-- <= 0 }

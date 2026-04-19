@@ -419,11 +419,11 @@ fun ShooterFullScreen(
     onEnd     : ((Boolean) -> Unit)? = null  // true = mauvaise fin
 ) {
     LaunchedEffect(Unit) {
-        recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        recipient.musicFile?.let { CrackleSound.playWav("ninjagaiden.mp3", loop = true) }
     }
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(
-            onDismiss = { CrackleSound.stopWav(); onQuit() },
+            onDismiss = { /*CrackleSound.stopWav();*/ onQuit() },
             onEnd     = onEnd,
             autoStart = true
         )
@@ -490,8 +490,18 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
     // Joueur
     val px = w * 0.06f
     val py = game.playerY * h
-    drawRect(STeal.copy(alpha = 0.9f), Offset(px - 6f, py - 8f), Size(16f, 16f))
-    drawRect(STeal, Offset(px + 10f, py - 3f), Size(12f, 6f))
+    val playerColor = if (game.playerHitFlash > 0) Color.Red else STeal
+    val hitAlpha = (game.playerHitFlash / 20f).coerceIn(0f, 1f)
+    // Halo rouge sur impact
+    if (game.playerHitFlash > 0) {
+        drawCircle(Color.Red.copy(alpha = hitAlpha * 0.4f), 28f + hitAlpha * 10f, Offset(px, py))
+        // Flash plein écran très bref
+        if (game.playerHitFlash > 15) {
+            drawRect(Color.Red.copy(alpha = (hitAlpha - 0.7f).coerceAtLeast(0f) * 0.3f), Offset(0f, 0f), Size(w, h))
+        }
+    }
+    drawRect(playerColor.copy(alpha = 0.9f), Offset(px - 6f, py - 8f), Size(16f, 16f))
+    drawRect(playerColor, Offset(px + 10f, py - 3f), Size(12f, 6f))
     drawRect(Color(0xFF1A6060), Offset(px - 6f, py - 8f), Size(16f, 16f), style = Stroke(1f))
     drawRect(SGold.copy(alpha = 0.5f), Offset(px - 12f, py - 3f), Size(8f, 6f))
 
