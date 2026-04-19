@@ -4,8 +4,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +39,7 @@ fun IgniTerraIntro(
     var phase          by remember { mutableStateOf(0) }
     var countdown      by remember { mutableStateOf(-1) }
     var tick           by remember { mutableStateOf(0) }
+    var showLoader     by remember { mutableStateOf(true) }
 
     // Tick animation
     LaunchedEffect(Unit) {
@@ -59,12 +58,12 @@ fun IgniTerraIntro(
 
     // Séquence
     LaunchedEffect(Unit) {
-        // Chargement — 16 secondes avec boite à musique
-        CrackleSound.playWav("boiteamusique.mp3", loop = false)
+        // Chargement — 17 secondes avec boite à musique
+        kotlinx.coroutines.GlobalScope.launch { CrackleSound.playWav("boiteamusique.mp3", loop = false) }
         val steps = 100
         repeat(steps) { i ->
             loaderProgress = i.toFloat() / steps
-            delay(160L)  // 100 × 170ms = 17 secondes
+            delay(170L)  // 100 × 170ms = 17 secondes
         }
         loaderProgress = 1f
         delay(400L)
@@ -72,6 +71,7 @@ fun IgniTerraIntro(
         // Texte intro
         if (introText.isNotEmpty()) {
             phase = 1
+            showLoader = false
             val charDelay = 14000L / introText.length
             val laughTrigger = "on ne peut la tuer qu"  // trigger robuste sans apostrophe
             var laughTriggered = false
@@ -80,7 +80,6 @@ fun IgniTerraIntro(
                 // Déclenche le rire quand la phrase clé est complète
                 if (!laughTriggered && displayedText.contains(laughTrigger)) {
                     laughTriggered = true
-                    // Lance le son sans bloquer le typewriter
                     kotlinx.coroutines.GlobalScope.launch {
                         delay(300L)
                         CrackleSound.stopWav()
@@ -111,11 +110,9 @@ fun IgniTerraIntro(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 32.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            if (showLoader) {
             Text(
                 "AUTORITÉ MAGITEK GARLEAN",
                 fontSize = 8.sp, letterSpacing = 4.sp,
@@ -140,24 +137,26 @@ fun IgniTerraIntro(
             Spacer(Modifier.height(8.dp))
 
             // Barre de chargement
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Box(Modifier.width(280.dp).height(4.dp).background(Color(0xFF0A1520))) {
-                    Box(
-                        Modifier.fillMaxHeight().fillMaxWidth(loaderProgress)
-                            .background(ITeal)
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(Modifier.width(280.dp).height(4.dp).background(Color(0xFF0A1520))) {
+                        Box(
+                            Modifier.fillMaxHeight().fillMaxWidth(loaderProgress)
+                                .background(ITeal)
+                        )
+                    }
+                    Text(
+                        if (loaderProgress < 1f)
+                            "INITIALISATION SYSTEME... ${(loaderProgress * 100).toInt()}%"
+                        else "SYSTEME OPERATIONNEL",
+                        fontSize = 7.sp, letterSpacing = 2.sp,
+                        fontFamily = IMono,
+                        color = if (loaderProgress < 1f) IT3 else ITeal
                     )
                 }
-                Text(
-                    if (loaderProgress < 1f)
-                        "INITIALISATION SYSTÈME... ${(loaderProgress * 100).toInt()}%"
-                    else "SYSTÈME OPÉRATIONNEL",
-                    fontSize = 7.sp, letterSpacing = 2.sp,
-                    fontFamily = IMono,
-                    color = if (loaderProgress < 1f) IT3 else ITeal
-                )
             }
 
             // Texte intro typewriter

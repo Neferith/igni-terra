@@ -22,13 +22,14 @@ enum class ZombieType(
 }
 
 data class Zombie(
-    val id      : Int,
-    val type    : ZombieType,
-    var x       : Float,
-    val y       : Float,
-    var hp      : Int     = type.hp,
-    var alive   : Boolean = true,
-    var hitFlash: Int     = 0
+    val id        : Int,
+    val type      : ZombieType,
+    var x         : Float,
+    val y         : Float,
+    var hp        : Int     = type.hp,
+    var alive     : Boolean = true,
+    var hitFlash  : Int     = 0,
+    val speedMult : Float   = 1f
 )
 
 data class Bullet(
@@ -242,10 +243,16 @@ class ShooterGame {
         // Spawn — max 8 zombies simultanés
         if (spawnQueue.isNotEmpty() && zombies.count { it.alive } < 8 && rng.nextFloat() < 0.012f) {
             val type = spawnQueue.removeAt(0)
+            // Boost de vitesse aléatoire selon la vague
+            val speedBoostChance = (wave - 1) * 0.12f  // vague 1=0%, 5=48%
+            val speedMult = if (rng.nextFloat() < speedBoostChance) {
+                1f + rng.nextFloat() * (wave * 0.15f)  // +15% à +75% selon vague
+            } else 1f
             zombies.add(Zombie(
                 id = nextId++, type = type,
                 x  = 0.95f + rng.nextFloat() * 0.1f,
                 y  = 0.10f + rng.nextFloat() * 0.80f,
+                speedMult = speedMult
             ))
         }
 
@@ -253,7 +260,7 @@ class ShooterGame {
         val deadZombies = mutableListOf<Zombie>()
         zombies.forEach { z ->
             if (!z.alive) { deadZombies.add(z); return@forEach }
-            z.x -= z.type.speed
+            z.x -= z.type.speed * z.speedMult
             if (z.hitFlash > 0) z.hitFlash--
             if (z.x <= 0.08f) {
                 z.alive = false
@@ -530,7 +537,7 @@ class ShooterGame {
             // Touche le joueur
             if (abs(m.x - 0.08f) < 0.05f && abs(m.y - playerY) < 0.05f) {
                 m.alive = false
-                lives = (lives - 1).coerceAtLeast(0)
+                lives = (lives - 3).coerceAtLeast(0)
                 playerHitFlash = 20
                 CrackleSound.shooterPlayerHit()
                 explosions.add(Explosion(m.x, m.y))

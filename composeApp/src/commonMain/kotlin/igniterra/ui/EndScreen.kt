@@ -27,15 +27,35 @@ enum class EndType { VICTORY, BITTER_VICTORY, BAD_END }
 
 
 private val GOOD_ENDING_TEXT = """
-[PLACEHOLDER — message bonne fin]
+Je dois dire que tu m’impressionnes chaque fois un peu plus Adrila. Je ne pensais pas que tu t’en sortirais aussi bien à mon petit jeu.
+J’ai une nouvelle demande pour toi, Adrila. J’aurais besoin que tu te réserves un Igni Terra pour réaliser une tâche personnelle. Surtout, n’en parle pas à ton robot de compagnie, je suis presque certaine qu’elle n’apprécierait pas.
+Je veux ensuite que tu retournes finir le travail que nous n’avons pas pu finir à cause de toi. Tu sauras tout une fois sur place avec l’igni terra.
+Oh ! J’y pense. J’ai pu voir les jolis portraits qu’ils ont pu afficher de toi en Noscea dans le Coerthas. Très réussi. Fais attention… à un moment ou à un autre, ça risque de remonter un peu plus haut. Ça pourrait nuire à ta réputation. Ça ferait mauvais genre qu'on apprenne que la cheffe de la nouvelle lune est une meurtrière, non ? Ne t’en fais pas. Je suis sûre qu’on pourra régler cette situation si tu fais bien ton travail.
+Oh… et inutile d’envisager de me refuser quoi que ce soit. Tu as peut-être pu sauver Elea dans un jeu. Mais est-ce que tu y parviendras mille fois dans la vraie vie ?
+
+Decimus Sas Varen
+
+""".trim()
+
+private val BAD_ENDING_TEXT  = """
+C’est donc tout ce que vaut la vie d’Elea à tes yeux ? Je suis déçue, véritablement déçue Adrila. Je devrais peut-être la tuer pour de vrai ?
+Tu y penses ?
+Réfléchis Adrila… est ce que tout ceci est bien raisonnable ? Parviendras-tu à sauver Elea une seule fois ? Nous allons voir.
+J’ai une nouvelle demande pour toi, Adrila. J’aurais besoin que tu te réserves un Igni Terra pour réaliser une tâche personnelle. Surtout, n’en parle pas à ton petit robot de compagnie, je suis presque certaine qu’elle n’apprécierait pas.
+Je veux ensuite que tu retournes finir le travail que nous n’avons pas pu finir à cause de toi dans le Coerthas. Tu sauras tout une fois sur place avec l’igni terra.
+Oh ! J’y pense. J’ai pu voir les jolis portraits qu’ils ont pu afficher de toi en Noscea. Très réussi. Fais attention… à un moment ou à un autre, ça risque de remonter un peu plus haut. Ça pourrait nuire à ta réputation. Ça ferait mauvais genre qu'on apprenne que la cheffe de la nouvelle lune est une meurtrière, non ? Ne t’en fais pas. Je suis sûre qu’on pourra régler cette situation si tu fais bien ton travail.
+
+Decimus Sas Varen
 """.trim()
 
 private val DEFEAT_TEXT = """
-[PLACEHOLDER — message défaite]
-""".trim()
+Aucune persévérance. C’est vraiment très décevant Adrila. Tu ne sais pas le temps que j’ai dû prendre pour mettre tout ceci en place et tu jettes l’ensemble comme un malpropre. Je suis outré. Terriblement outré. Tu n’as vraiment aucune valeur à mes yeux. Traitresse. Mais j’ai encore besoin de toi, si tu es intelligente, tu t’en serviras comme levier pour remonter dans mon estime.
+J’ai une nouvelle demande pour toi, Adrila. J’aurais besoin que tu te réserves un Igni Terra pour réaliser une tâche personnelle. Surtout, n’en parle pas à ton robot de compagnie, je suis presque certaine qu’elle n’apprécierait pas.
+Je veux ensuite que tu retournes finir le travail que nous n’avons pas pu finir à cause de toi dans le Coerthas. Tu sauras tout une fois sur place avec l’igni terra.
+Oh ! J’y pense. J’ai pu voir les jolis portraits qu’ils ont pu afficher de toi en Noscea. Très réussi. Fais attention… à un moment ou à un autre, ça risque de remonter un peu plus haut. Ça pourrait nuire à ta réputation. Ça ferait mauvais genre qu'on apprenne que la cheffe de la nouvelle lune est une meurtrière, non ? Ne t’en fais pas. Je suis sûre qu’on pourra régler cette situation si tu fais bien ton travail.
 
-private val BAD_ENDING_TEXT = """
-[PLACEHOLDER — message mauvaise fin]
+Decimus Sas Varen
+
 """.trim()
 
 @Composable

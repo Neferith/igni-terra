@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
@@ -131,6 +133,53 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                     ) {
                         Text("ACCÉDER", fontSize = 9.sp, letterSpacing = 4.sp, fontFamily = Mono, color = Teal)
                     }
+                }
+
+                // Slider volume
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
+                Spacer(Modifier.height(10.dp))
+                var volume by remember { mutableStateOf(1f) }
+                var muted  by remember { mutableStateOf(false) }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(0.5f),) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text("SON", fontSize = 7.sp, letterSpacing = 2.sp, fontFamily = Mono, color = T3)
+                        Spacer(Modifier.weight(1f))
+                        var musicPlaying by remember { mutableStateOf(false) }
+                        Box(
+                            Modifier
+                                .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
+                                .clickable {
+                                    CrackleSound.click()
+                                    if (musicPlaying) CrackleSound.stopWav()
+                                    else CrackleSound.playWav("endwalker8bits.mp3", loop = true)
+                                    musicPlaying = !musicPlaying
+                                }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(if (musicPlaying) "STOP" else "TEST", fontSize = 7.sp, fontFamily = Mono,
+                                color = if (musicPlaying) Teal else T3)
+                        }
+                        Box(
+                            Modifier
+                                .border(1.dp, if (muted) Red.copy(alpha = 0.5f) else Bdr, RoundedCornerShape(2.dp))
+                                .clickable { muted = !muted; CrackleSound.setVolume(if (muted) 0f else volume); CrackleSound.click() }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(if (muted) "MUET" else "ON", fontSize = 7.sp, fontFamily = Mono,
+                                color = if (muted) Red.copy(alpha = 0.5f) else TealDk)
+                        }
+                    }
+                    Slider(
+                        value = if (muted) 0f else volume,
+                        onValueChange = { v -> volume = v; if (muted && v > 0f) muted = false; CrackleSound.setVolume(v) },
+                        modifier = Modifier.fillMaxWidth().height(20.dp),
+                        colors = androidx.compose.material.SliderDefaults.colors(thumbColor = Teal, activeTrackColor = Teal, inactiveTrackColor = Bdr)
+                    )
                 }
             }
         }
