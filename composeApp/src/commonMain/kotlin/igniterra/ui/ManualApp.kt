@@ -87,7 +87,7 @@ fun ManualApp() {
 
     if (recipient != null && recipient!!.hasGameAccess) {
         var introShown by remember { mutableStateOf(false) }
-        var gameResult by remember { mutableStateOf<Boolean?>(null) }
+        var gameResult by remember { mutableStateOf<EndType?>(null) }
        /* if (!introShown) {
             IgniTerraIntro(
                 introText  = "Mon amour,\n" +
@@ -114,7 +114,7 @@ fun ManualApp() {
                 onComplete = { introShown = true }
             )
             gameResult != null -> EndScreen(
-                isBadEnding = gameResult!!,
+                endType = gameResult!!,
                 onQuit      = { recipient = null }
             )
             else -> ShooterFullScreen(

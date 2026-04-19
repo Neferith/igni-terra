@@ -23,8 +23,15 @@ private val EOrange = Color(0xFFFF6B00)
 private val ET3   = Color(0xFF4A6880)
 private val EMono = FontFamily.Monospace
 
+enum class EndType { VICTORY, BITTER_VICTORY, BAD_END }
+
+
 private val GOOD_ENDING_TEXT = """
 [PLACEHOLDER — message bonne fin]
+""".trim()
+
+private val DEFEAT_TEXT = """
+[PLACEHOLDER — message défaite]
 """.trim()
 
 private val BAD_ENDING_TEXT = """
@@ -33,12 +40,20 @@ private val BAD_ENDING_TEXT = """
 
 @Composable
 fun EndScreen(
-    isBadEnding : Boolean,
+    endType     : EndType,
     onQuit      : () -> Unit
 ) {
     var displayedText by remember { mutableStateOf("") }
-    val fullText = if (isBadEnding) BAD_ENDING_TEXT else GOOD_ENDING_TEXT
-    val accentColor = if (isBadEnding) EOrange else EGold
+    val fullText = when (endType) {
+        EndType.VICTORY        -> GOOD_ENDING_TEXT
+        EndType.BITTER_VICTORY -> BAD_ENDING_TEXT
+        EndType.BAD_END        -> DEFEAT_TEXT
+    }
+    val accentColor = when (endType) {
+        EndType.VICTORY        -> EGold
+        EndType.BITTER_VICTORY -> EOrange
+        EndType.BAD_END        -> ERed
+    }
 
     LaunchedEffect(Unit) {
         val charDelay = 12000L / fullText.length
@@ -59,7 +74,11 @@ fun EndScreen(
         ) {
             // Titre
             Text(
-                if (isBadEnding) "FIN AMERE" else "FIN",
+                when {
+                    endType == EndType.BAD_END  -> "GAME OVER"
+                    endType == EndType.BITTER_VICTORY -> "VICTOIRE AMERE"
+                    else         -> "VICTOIRE !"
+                },
                 fontSize = 10.sp, fontFamily = EMono,
                 color = accentColor, letterSpacing = 8.sp
             )

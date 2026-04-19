@@ -46,7 +46,7 @@ private val SBlood    = Color(0xFFAA1111)   // sang sombre
 
 // ── Overlay — structure identique à FpsView ───────────────────────────────────
 @Composable
-fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((Boolean) -> Unit)? = null) {
+fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((EndType) -> Unit)? = null) {
     val game           = remember { ShooterGame() }
     val scope          = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
@@ -309,13 +309,13 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
                                     color = if (game.girlsLost > 0) SRed else ST3)
                             }
                             Spacer(Modifier.height(6.dp))
-                            Text("Score final : \${game.score}", fontSize = 11.sp, fontFamily = SMono, color = ST3)
+                            Text("Score final : ${game.score}", fontSize = 11.sp, fontFamily = SMono, color = ST3)
                             if (game.won) {
                                 Spacer(Modifier.height(12.dp))
                                 Box(
                                     Modifier
                                         .border(1.dp, if (isBadEnding) Color(0xFFFF6B00) else SGold)
-                                        .clickable { onEnd?.invoke(isBadEnding) }
+                                        .clickable { onEnd?.invoke(if (isBadEnding) EndType.BITTER_VICTORY else EndType.VICTORY) }
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
@@ -330,6 +330,34 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
                                 }
                             } else {
                                 Text("MISSION ECHOUEE", fontSize = 8.sp, fontFamily = SMono, color = SRed, letterSpacing = 3.sp)
+                                Spacer(Modifier.height(12.dp))
+                                // Bouton abandon
+                                Box(
+                                    Modifier
+                                        .border(1.dp, SRed.copy(alpha = 0.6f))
+                                        .clickable { onEnd?.invoke(EndType.BAD_END) }
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        "On abandonne Adrila ? Viens ici.",
+                                        fontSize = 9.sp, fontFamily = SMono,
+                                        color = SRed, letterSpacing = 1.sp
+                                    )
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                // Bouton rejouer
+                                Box(
+                                    Modifier
+                                        .border(1.dp, STeal.copy(alpha = 0.6f))
+                                        .clickable { game.start(); CrackleSound.click() }
+                                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        "Tentez une nouvelle fois",
+                                        fontSize = 9.sp, fontFamily = SMono,
+                                        color = STeal, letterSpacing = 1.sp
+                                    )
+                                }
                             }
                         }
                     }
@@ -426,7 +454,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
 fun ShooterFullScreen(
     recipient : AppStrings.Recipient,
     onQuit    : () -> Unit,
-    onEnd     : ((Boolean) -> Unit)? = null  // true = mauvaise fin
+    onEnd     : ((EndType) -> Unit)? = null
 ) {
     LaunchedEffect(Unit) {
         recipient.musicFile?.let { CrackleSound.playWav("ninjagaiden.mp3", loop = true) }
