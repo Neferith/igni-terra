@@ -105,9 +105,12 @@ fun ManualApp() {
         when {
             !introShown -> IgniTerraIntro(
                 introText  = "Mon amour,\n" +
-                        "Elea est en danger. Les morts-vivants sont partout et elle s'est perdue dans le Coerthas. Va, c'est ta mission aujourd'hui. Prends l'Igni Terra et va la sauver. Je t'en prie mon amour, je compte sur toi.\n" +
-                        "Et surtout, n'oublie pas. On peut sauver mille fois Elea, mais on ne peut la tuer qu'une seule fois.\n" +
-                        "Eleanor Dubrie\n",
+                        "Je sais que tu as déjà fort à faire. Les derniers jours n’ont pas été faciles.\n" +
+                        "Elea est en danger. Les morts-vivants sont partout et elle s’est perdue dans le Coerthas. Va, c'est ta mission aujourd'hui. Prends l’Igni Terra et va la sauver. Je t’en prie mon amour, je compte sur toi. J’ai équipé le lance-flamme d’un grappin pour que tu puisses attraper Elea.\n" +
+                        "Surtout, ne laisse pas les cadavres animés pénétrer dans notre camp. Il n’y a malheureusement personne d’autre pour le garder ce soir.\n" +
+                        "Malheureusement, l’Igni Terra n’est pas assez chargé. Tu vas devoir trouver des réserves en chemin. Quelque chose approche, c’est très gros. Il va falloir t’y préparer !\n" +
+                        "Et surtout, n’oublie pas. On peut sauver mille fois Elea, mais on ne peut la tuer qu’une seule fois.\n" +
+                        "Eleanor Dubrie\n\n",
                 onComplete = { introShown = true }
             )
             gameResult != null -> EndScreen(
@@ -116,7 +119,7 @@ fun ManualApp() {
             )
             else -> ShooterFullScreen(
                 recipient = recipient!!,
-                onQuit    = { recipient = null },
+                onQuit    = { /*recipient = null*/ },
                 onEnd     = { badEnding -> gameResult = badEnding }
             )
         }

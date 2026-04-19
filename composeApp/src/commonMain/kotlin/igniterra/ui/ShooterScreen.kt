@@ -124,7 +124,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((B
                     .padding(horizontal = 14.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                ShooterHud("VAGUE", "${game.wave}/5")
+                ShooterHud("VAGUE", if (game.finalBoss != null) "BOSS" else "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "${game.lives}")
 
@@ -438,7 +438,17 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
     val h = size.height
 
 
-    drawRect(Color(0xFF0A1828), Offset(0f, 0f), Size(w, h))
+    val waveProg = (game.wave.toFloat() / 6f).coerceIn(0f, 1f)
+
+    val bgR = (0x0A + (waveProg * 0x10).toInt())
+    val bgG = (0x18 - (waveProg * 0x10).toInt()).coerceAtLeast(0)
+    val bgB = (0x28 - (waveProg * 0x18).toInt()).coerceAtLeast(8)
+
+    val bgColor = Color(0xFF000000 or (bgR.toLong() shl 16) or (bgG.toLong() shl 8) or bgB.toLong())
+
+
+
+    drawRect(bgColor, Offset(0f, 0f), Size(w, h))
 
     val particleCount = 200
 
@@ -450,6 +460,28 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         val radius = if (i % 5 == 0) 2.5f else if (i % 3 == 0) 1.5f else 1f
         val alpha  = if (i % 5 == 0) 0.5f else if (i % 3 == 0) 0.3f else 0.15f
         drawCircle(SSnow.copy(alpha = alpha), radius, Offset(fx, fy))
+    }
+
+    // Foudre à partir de la vague 4
+    if (game.wave >= 4) {
+        val lightningAlpha = ((game.wave - 3) / 3f).coerceIn(0f, 1f)
+        repeat(2) { li ->
+            val rngL = kotlin.random.Random((tick / 40 + li * 17).toLong())
+            if (rngL.nextFloat() < 0.15f) {
+                val lx = rngL.nextFloat() * w * 0.8f + w * 0.1f
+                var ly = 0f
+                val rngStep = kotlin.random.Random((tick / 40 + li * 17 + 1).toLong())
+                val points = mutableListOf(Offset(lx, 0f))
+                while (ly < h) {
+                    ly += 20f + rngStep.nextFloat() * 30f
+                    points.add(Offset((lx + (rngStep.nextFloat() - 0.5f) * 40f).coerceIn(0f, w), ly))
+                }
+                for (pi in 0 until points.size - 1) {
+                    drawLine(Color(0xFFCCDDFF).copy(alpha = lightningAlpha * 0.7f), points[pi], points[pi + 1], 1.5f)
+                    drawLine(Color(0xFF8899FF).copy(alpha = lightningAlpha * 0.2f), points[pi], points[pi + 1], 5f)
+                }
+            }
+        }
     }
 
     // Ligne de danger

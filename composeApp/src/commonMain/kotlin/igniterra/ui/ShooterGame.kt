@@ -127,8 +127,9 @@ class ShooterGame {
     var messageTimer  = 0
     var tickCount  by mutableStateOf(0)
     var badEnding   by mutableStateOf(false)
-    var girlsSaved  by mutableStateOf(0)
-    var girlsLost   by mutableStateOf(0)
+    var girlsSaved      by mutableStateOf(0)
+    var girlsLost       by mutableStateOf(0)
+    private var firstKill = true
 
     // Position du joueur (0.0 = haut, 1.0 = bas)
     var playerY        by mutableStateOf(0.5f)
@@ -145,6 +146,7 @@ class ShooterGame {
         badEnding = false
         girlsSaved = 0
         girlsLost = 0
+        firstKill = true
         // Clear tout sauf la charge igni
         zombies.clear(); bullets.clear(); explosions.clear()
         civilians.clear(); parts.clear(); missiles.clear()
@@ -254,25 +256,30 @@ class ShooterGame {
 
         // Vague suivante
         if (spawnQueue.isEmpty() && zombies.none { it.alive }) {
-            if (wave == WAVES.size && finalBoss == null) {
-                val nextWave = wave
-                scope.launch {
-                    message = "LE LÉGAT SUPRÊME ARRIVE..."
-                    delay(2000L)
-                    wave = WAVES.size + 1
-                    showMessage("VAGUE FINALE", 150, priority = 5)
-                    finalBoss = FinalBoss()
+            when {
+                // Après vague 5 — lancer le boss
+                wave == WAVES.size && finalBoss == null -> {
+                    scope.launch {
+                        showMessage("LE LEGAT SUPREME ARRIVE...", 180, priority = 5)
+                        delay(2000L)
+                        // On ne change pas wave — on reste affiché "5/5"
+                        showMessage("VAGUE FINALE", 150, priority = 5)
+                        finalBoss = FinalBoss()
+                    }
                 }
-                return
-            }
-            if (wave > WAVES.size && finalBoss?.alive == false) {
-                won = true; message = "VICTOIRE !"
-            } else {
-                val nextWave = wave
-                scope.launch {
-                    showMessage("VAGUE ${nextWave + 1} EN APPROCHE...", 120)
-                    delay(2000L)
-                    spawnWave(nextWave)
+                // Boss vaincu — victoire
+                finalBoss?.alive == false -> {
+                    won = true
+                    showMessage("VICTOIRE !", 300, priority = 10)
+                }
+                // Vague suivante normale
+                wave < WAVES.size -> {
+                    val nextWave = wave
+                    scope.launch {
+                        showMessage("VAGUE ${nextWave + 1} EN APPROCHE...", 120)
+                        delay(2000L)
+                        spawnWave(nextWave)
+                    }
                 }
             }
         }
@@ -312,6 +319,10 @@ class ShooterGame {
                 badEnding = true
                 girlsLost++
                 CrackleSound.shooterGirlKilled()
+                if (firstKill) {
+                    firstKill = false
+                    showMessage("Mes condoleances Adrila, tu viens de tuer Elea !", 240, priority = 9)
+                }
                 civilianMessage = "UNE ENFANT EST PERDUE..."
                 civilianMsgTimer = 180
                 deadCivilians.add(c)
@@ -330,6 +341,10 @@ class ShooterGame {
                     girlsLost++
                     badEnding = true
                     CrackleSound.shooterGirlKilled()
+                    if (firstKill) {
+                        firstKill = false
+                        showMessage("Mes condoleances Adrila, tu viens de tuer Elea !", 240, priority = 9)
+                    }
                     civilianMessage = "TU L'AS TUÉE !"
                     civilianMsgTimer = 120
                     if (lives <= 0) { alive = false; message = "GAME OVER" }
@@ -351,7 +366,7 @@ class ShooterGame {
             boss.y += ((if (boss.phase == 0) 0.004f else 0.007f) * kotlin.math.sin(tickCount * 0.05)).toFloat()
 
             // Tir de missiles
-            val fireRate = if (boss.phase == 0) 0.045f else 0.065f
+            val fireRate = if (boss.phase == 0) 0.030f else 0.060f
             if (rng.nextFloat() < fireRate) {
                 val targetY = playerY
                 val dy = (targetY - boss.y).coerceIn(-0.5f, 0.5f)
