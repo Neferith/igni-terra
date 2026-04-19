@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,7 +92,10 @@ fun EndScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.widthIn(max = 480.dp).padding(40.dp)
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .padding(40.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             // Titre
             Text(
@@ -107,18 +112,21 @@ fun EndScreen(
             Spacer(Modifier.height(8.dp))
 
             // Texte typewriter
-            Text(
-                displayedText,
-                fontSize = 11.sp, fontFamily = EMono,
-                color = ETeal.copy(alpha = 0.9f),
-                lineHeight = 19.sp,
-                textAlign = TextAlign.Start,
-                modifier = Modifier
+            Box(
+                Modifier
+                    .fillMaxWidth()
                     .background(Color(0xFF080F18))
                     .border(1.dp, accentColor.copy(alpha = 0.3f))
                     .padding(18.dp)
-                    .fillMaxWidth()
-            )
+            ) {
+                Text(
+                    displayedText,
+                    fontSize = 11.sp, fontFamily = EMono,
+                    color = ETeal.copy(alpha = 0.9f),
+                    lineHeight = 19.sp,
+                    textAlign = TextAlign.Start
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
 
