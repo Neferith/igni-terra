@@ -308,7 +308,7 @@ class ShooterGame {
                 // Après vague 5 — lancer le boss
                 wave == WAVES.size && finalBoss == null -> {
                     scope.launch {
-                        showMessage("LE LEGAT SUPREME ARRIVE...", 180, priority = 5)
+                        showMessage("RAGGATH ARRIVE...", 180, priority = 5)
                         delay(2000L)
                         // On ne change pas wave — on reste affiché "5/5"
                         showMessage("VAGUE FINALE", 150, priority = 5)
@@ -369,7 +369,7 @@ class ShooterGame {
                 CrackleSound.shooterGirlKilled()
                 if (firstKill) {
                     firstKill = false
-                    showMessage("Mes condoleances Adrila, tu viens de tuer Elea !", 240, priority = 9)
+                    showMessage("Mes condoleances, tu viens de tuer Elea !", 240, priority = 9)
                 }
                 civilianMessage = "UNE ENFANT EST PERDUE..."
                 civilianMsgTimer = 180
@@ -391,7 +391,7 @@ class ShooterGame {
                     CrackleSound.shooterGirlKilled()
                     if (firstKill) {
                         firstKill = false
-                        showMessage("Mes condoleances Adrila, tu viens de tuer Elea !", 240, priority = 9)
+                        showMessage("Mes condoleances, tu viens de tuer Elea !", 240, priority = 9)
                     }
                     civilianMessage = "TU L'AS TUÉE !"
                     civilianMsgTimer = 120

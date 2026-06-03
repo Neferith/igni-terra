@@ -69,10 +69,7 @@ object AppStrings {
             displayName = "Winifred de Honeystone — Pupille Hauterive",
             password    = "thepooh",
             note        = "Winifred,\n\n" +
-                    "On ne se connaît pas vraiment, mais je vous assure que c’est un plaisir de vous avoir dans la compagnie.\n" +
-                    "Mon rôle au sein de cette compagnie est multiple, bien que je sois rarement présente en mission. Mon seul objectif est d’être utile quand c’est nécessaire.\n" +
-                    "L’Igni Terra n’est pas juste un lance-flamme, il est le résultat d’une fusion de deux esprits. Je n’aime pas les armes, je ne me plais pas à les utiliser, malheureusement je me plais à les concevoir.\n" +
-                    "Faites très attention lors de son usage, ce n’est pas un jouet.\n\n" +
+                    "Je serai ravie de pouvoir échanger avec toi à l'occasion.\n" +
                     "— Eleanor Dubrie",
             musicFile = "ishgardAnthem8bits.mp3"
         ),
@@ -88,10 +85,7 @@ object AppStrings {
             displayName = "Lothaire — Novice parmi la Nouvelle Lune depuis le 23/12/2025",
             password    = "lotus",
             note        = "Lothaire,\n\n" +
-                    "Déjà j’espère que tu vas bien. Ne pense pas que ta disparition ne m’a pas inquiété, mais, quelles que soient les raisons, je n’ai aucun doute sur tes convictions et ta volonté. Tu as la capacité de te sortir des pires situations.\n" +
-                    "Maintenant, pour ce qui est de l’Igni Terra, je te prie d’en faire un usage modéré." +
-                    " Avec Damian, nous l’avons pensé comme un outil servant à calciner le mal, mais il peut être à double tranchant." +
-                    " Une arme reste une arme. Plus elle est puissante, plus elle doit être utilisée avec parcimonie.\n\n" +
+                    "Est tu là ?\n\n" +
                     "— Eleanor Dubrie",
             musicFile = "ishgardAnthem8bits.mp3"
         ),
@@ -99,15 +93,35 @@ object AppStrings {
             displayName = "Adrila — Officière de la Nouvelle Lune",
             password    = "adrenaline",
             note        = "Mon amour,\n\n" +
-                    "J’espère que tu apprécies tous les efforts que je fais pour la Compagnie. C’est aussi un cadeau pour toi.\n\n" +
-                    "Mon corps est passion.\n" +
-                    "Mais mon cœur reste raison.\n" +
-                    "À nous l'avenir.\n\n" +
+                    "Concentre toi sur la partie recyclage. J'ai ajouté deux addendums dans les dispositions légales.\n\n" +
+                    "Je suis navrée de le dire ici, mais dans un cadre professionnel, les promesses n'engagent que ceux qui les croient. C'est d'ailleurs dans ce but que j'ai rédigé ce document, il y a quelques mois. Il est la source de vérité. Chaque modification des conditions sera toujours précédé d'un addendum." +
                     "— Eleanor Dubrie\n" +
-            "PS : J'ai une surprise pour toi, clique cinq fois sur le logo et tu pourras la découvrir.",
+            "PS : Je t'aime.",
             hasSecretAccess = true,
-            hasGameAccess = true,
+            hasGameAccess = false,
             musicFile   = "garleananthem.mp3"
+        ),
+
+        Recipient(
+            displayName = "Uldric — Officier de la Nouvelle Lune",
+            password    = "attentionauchocoborouge",
+            note        = "Uldric," +
+                    "Je me rend compte que vous n'avez probablement jamais lu ce document. Voilà qui est réparé." +
+                    "Eleanor Dubrie",
+            hasSecretAccess = false,
+            hasGameAccess = false,
+            musicFile   = "ultima8bits.mp3"
+        ),
+        Recipient(
+            displayName = "Mia — Sorcière de la Nouvelle Lune",
+            password    = "mafilleboudeestaussiunegrandeboudeuse",
+            note        = "Mia,\n\n" +
+                    "La section qui t'interesse, c'est la partie recyclage.\n\n" +
+                    "Professionnellement vôtre\n\n" +
+                    "Eleanor Dubrie",
+            hasSecretAccess = false,
+            hasGameAccess = false,
+            musicFile   = "ultima8bits.mp3"
         ),
         Recipient(
             displayName = "Damian — Ingénieur de la Nouvelle Lune",
@@ -123,7 +137,6 @@ object AppStrings {
             displayName = "Alyx — Occultiste",
             password    = "akala",
             note        = "Alyx,\n\n" +
-                    "Je n’ai pas encore eu le plaisir de discourir avec vous, même si à l’occasion ce sera avec plaisir.\n" +
                     "L'Igni Terra n'est pas une arme ordinaire. Elle est surtout très dangereuse. Faites attention avec.\n\n" +
                     "— Eleanor Dubrie\n",
             musicFile = "endwalker8bits.mp3"
@@ -132,8 +145,7 @@ object AppStrings {
             displayName = "Wellan — Chasseur",
             password    = "piegeachocobo",
             note        = "Wellan,\n\n" +
-                    "Je me souviens encore de l’échec de notre piège avec le chocobo rouge. " +
-                    "Mais l’Igni Terra ne se retournera pas contre nous, si nous respectons les règles de sécurité.\n\n" +
+                    "J'espère que tu t'es bien remis de ta chute'.\n\n" +
                     "— Eleanor Dubrie\n",
             musicFile = "endwalker8bits.mp3"
         ),
@@ -371,7 +383,69 @@ object AppStrings {
         const val sub4Title = "Sanctions & protocole de destruction"
         const val p4 = "Tout usage en dehors du cadre défini entraînera la confiscation immédiate de l'ensemble des prototypes et composants. En cas d'impossibilité de récupération, l'opérateur désigné est tenu d'activer le protocole de destruction : immersion complète dans l'eau salée pendant 24 heures, suivi d'un démantèlement physique du cristal de foudre. Damian Ashwood se réserve le droit de récupérer personnellement tout matériel confisqué."
 
+
+        const val addendumNum   = "06.5"
+        const val addendumTitle = "Addendum I — Dévolution exclusive des prérogatives"
+        const val addendum      = "En application de l'article 06.2 et consécutivement à la cessation des fonctions de Damian Ashwood au sein de la Compagnie de la Nouvelle Lune, l'ensemble des droits décisionnels, révocatoires et interprétatifs attachés à la co-propriété de l'Igni Terra est transféré de plein droit et sans réserve à Eleanor Dubrie, désormais seule habilitée à statuer sur tout usage, amendement ou litige relatif au présent dispositif et à sa documentation."
+        const val addendumStamp = "Fait et opposable à compter de la date de consultation. — Eleanor Dubrie, DAE"
+
+        const val addendum2Num   = "06.6"
+        const val addendum2Title = "Addendum II — Restriction du démantèlement"
+        const val addendum2      = "Hors circonstances constitutives d'une urgence au sens de l'article 06.4, tout démantèlement, désassemblage ou neutralisation partielle ou totale des composants de l'Igni Terra est subordonné à l'autorisation préalable et explicite d'Eleanor Dubrie. Toute opération réalisée en dehors de ce cadre engage la responsabilité exclusive de son auteur et est réputée constituer une violation des présentes dispositions."
+
         const val stamp = "Document validé — NLRP / DAE"
+
+
+    }
+
+    object S07 {
+        const val num   = "07"
+        const val title = "Recyclage & Restitution des Composants"
+        const val intro = "L'Igni Terra a été développé dans le cadre d'une mission unique et définie : la neutralisation des créatures mortes-vivantes en zone Coerthas. Une fois cette mission accomplie, l'arme ne présente plus d'utilité opérationnelle pour son détenteur."
+        const val body  = "La destruction pure et simple de l'appareil n'est cependant pas envisageable. Chaque module qui le compose représente un investissement technique et matériel considérable. Le détenteur est tenu de restituer l'intégralité des composants en vue d'un recyclage dans des applications civiles et industrielles."
+
+        object Chargeur {
+            const val num   = "07.1"
+            const val title = "Chargeurs — Composition éthérique"
+            const val body  = "Les chargeurs constituent le coeur énergétique de l'Igni Terra. Chaque chargeur contient un mélange de trois composants éthériques dont la combinaison produit l'agrégat de tir. Le sable éthéré dopé à l'éther de feu assure la combustion intense et l'adhérence sur les cibles. La poudre de cristal de vent assure la propulsion et la portée du jet. Le contenu résiduel des chargeurs présente une valeur non négligeable et doit être récupéré pour recyclage."
+
+            const val comp1Label   = "Sable éthéré [FEU]"
+            const val comp1Recycle = "Industrie thermique, forges magitek, systèmes de chauffage industriel."
+            const val comp2Label   = "Sable éthéré [TERRE]"
+            const val comp2Recycle = "Matériaux d'isolation, revêtements industriels, travaux de fondation."
+            const val comp3Label   = "Poudre cristal [VENT]"
+            const val comp3Recycle = "Systèmes de ventilation magitek, propulsion légère, filtration d'air."
+        }
+
+        object Modules {
+            const val num   = "07.2"
+            const val title = "Modules structurels"
+
+            const val m1Label   = "Module de Combustion α"
+            const val m1Desc    = "Alliage résistant aux hautes températures, coût de fabrication élevé."
+            const val m1Recycle = "Systèmes de chauffage industriel, forges magitek."
+
+            const val m2Label   = "Régulateur de Pression β"
+            const val m2Desc    = "Pièce de précision à haute tolérance. Ne pas démonter sans équipement adapté — composant sous pression."
+            const val m2Recycle = "Équipements hydrauliques, systèmes de distribution de fluides en milieu médical."
+
+            const val m3Label   = "Cristal de Canalisation γ"
+            const val m3Desc    = "Composant le plus coûteux de l'appareil. Extraction et taille artisanale. Restitution sous scellé."
+            const val m3Recycle = "Instrumentation scientifique, éclairage à longue durée."
+
+            const val m4Label   = "Système d'Arc Électrique"
+            const val m4Desc    = "Peut conserver une charge résiduelle après usage. Manipulation avec précaution."
+            const val m4Recycle = "Outils magitek légers, équipements de recherche, stimulation électrique à visée médicale."
+        }
+
+        object BombeEtherique {
+            const val num   = "07.3"
+            const val title = "Application dérivée — Bombe Éthérique à Détonation Distante"
+            const val body  = "Les résidus d'agrégat récupérés dans les chargeurs usagés peuvent être reconditionnés en dispositifs explosifs compacts. Le mélange sable éthéré Feu/Terre constitue la charge principale — instable à haute concentration, il suffit d'une impulsion d'arc pour déclencher la détonation. La poudre de cristal de Vent sert de propulseur de dispersion, augmentant le rayon d'effet."
+            const val portability = "Le dispositif final se présente sous la forme d'un flacon hermétique de la taille d'un poing. Léger, discret, transportable sans équipement spécifique."
+            const val detonation  = "La détonation à distance est assurée par un émetteur d'arc éthérique miniaturisé, couplé à un cristal de Foudre. La portée de déclenchement est estimée à 30 yalms."
+            const val warning     = "Usage strictement réservé aux opérations autorisées par les propriétaires. Voir section 06.2."
+        }
     }
 
     object Footer {

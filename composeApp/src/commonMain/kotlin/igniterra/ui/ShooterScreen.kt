@@ -52,6 +52,11 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
+  CrackleSound.playWav("ninjagaiden.mp3", loop = true)
+    }
+
+
+    LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         if (autoStart) game.start()
     }
@@ -320,9 +325,9 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                                 ) {
                                     Text(
                                         if (isBadEnding)
-                                            "On se decourage, Adrila ? Viens ici !"
+                                            "On se decourage ? Viens ici !"
                                         else
-                                            "Felicitation, Adrila ! Viens ici !",
+                                            "Felicitation ! Viens ici !",
                                         fontSize = 9.sp, fontFamily = SMono,
                                         color = if (isBadEnding) Color(0xFFFF6B00) else SGold,
                                         letterSpacing = 1.sp
@@ -339,7 +344,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
-                                        "On abandonne Adrila ? Viens ici.",
+                                        "On abandonne ? Viens ici.",
                                         fontSize = 9.sp, fontFamily = SMono,
                                         color = SRed, letterSpacing = 1.sp
                                     )
@@ -456,9 +461,7 @@ fun ShooterFullScreen(
     onQuit    : () -> Unit,
     onEnd     : ((EndType) -> Unit)? = null
 ) {
-    LaunchedEffect(Unit) {
-        recipient.musicFile?.let { CrackleSound.playWav("ninjagaiden.mp3", loop = true) }
-    }
+
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(
             onDismiss = { /*CrackleSound.stopWav();*/ onQuit() },
@@ -696,16 +699,47 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         val sz = 40f
 
         // Corps massif irrégulier
-        val bodyPath = androidx.compose.ui.graphics.Path().apply {
-            moveTo(bx - sz * 0.4f, by - sz * 0.8f)
-            lineTo(bx + sz * 0.5f, by - sz * 0.6f)
-            lineTo(bx + sz * 0.6f, by)
-            lineTo(bx + sz * 0.5f, by + sz * 0.6f)
-            lineTo(bx - sz * 0.3f, by + sz * 0.8f)
-            lineTo(bx - sz * 0.6f, by + sz * 0.3f)
-            lineTo(bx - sz * 0.6f, by - sz * 0.3f)
+        // Corps du dragon
+        val dragonBody = androidx.compose.ui.graphics.Path().apply {
+            moveTo(bx - sz * 0.2f, by - sz * 0.3f)  // épaule gauche
+            lineTo(bx - sz * 0.5f, by - sz * 0.2f)  // cou
+            lineTo(bx - sz * 0.8f, by - sz * 0.1f)  // tête haut
+            lineTo(bx - sz * 1.0f, by)              // museau
+            lineTo(bx - sz * 0.8f, by + sz * 0.15f) // mâchoire
+            lineTo(bx - sz * 0.5f, by + sz * 0.2f)  // cou bas
+            lineTo(bx - sz * 0.1f, by + sz * 0.4f)  // poitrine
+            lineTo(bx - sz * 0.2f, by + sz * 0.6f)  // patte avant
+            lineTo(bx + sz * 0.1f, by + sz * 0.65f)
+            lineTo(bx + sz * 0.2f, by + sz * 0.4f)
+            lineTo(bx + sz * 0.5f, by + sz * 0.45f) // ventre
+            lineTo(bx + sz * 0.5f, by + sz * 0.6f)  // patte arrière
+            lineTo(bx + sz * 0.7f, by + sz * 0.65f)
+            lineTo(bx + sz * 0.8f, by + sz * 0.4f)
+            lineTo(bx + sz * 1.0f, by + sz * 0.2f)  // queue début
+            lineTo(bx + sz * 1.2f, by - sz * 0.1f)  // queue milieu
+            lineTo(bx + sz * 1.0f, by - sz * 0.2f)  // pointe queue
+            lineTo(bx + sz * 0.6f, by - sz * 0.1f)  // dos arrière
+            lineTo(bx + sz * 0.2f, by - sz * 0.2f)  // dos
             close()
         }
+// Aile
+        val wingPath = androidx.compose.ui.graphics.Path().apply {
+            moveTo(bx + sz * 0.1f, by - sz * 0.2f)
+            lineTo(bx + sz * 0.0f, by - sz * 0.9f)  // sommet aile gauche
+            lineTo(bx + sz * 0.5f, by - sz * 1.1f)  // pointe haute
+            lineTo(bx + sz * 0.9f, by - sz * 0.8f)  // pointe droite
+            lineTo(bx + sz * 0.7f, by - sz * 0.3f)  // base aile droite
+            close()
+        }
+
+        drawPath(dragonBody, color.copy(alpha = 0.3f))
+        drawPath(dragonBody, color, style = Stroke(2.5f))
+        drawPath(wingPath, color.copy(alpha = 0.15f))
+        drawPath(wingPath, color.copy(alpha = 0.6f), style = Stroke(1.5f))
+
+// Oeil
+      /*  drawCircle(Color(0xFFFF0000), 4f, Offset(bx - sz * 0.75f, by - sz * 0.05f))
+        drawCircle(Color.White, 1.5f, Offset(bx - sz * 0.75f, by - sz * 0.05f))
         drawPath(bodyPath, color.copy(alpha = 0.3f))
         drawPath(bodyPath, color, style = Stroke(3f))
 
@@ -727,7 +761,7 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
 
         // Cornes
         drawLine(color, Offset(bx - 15f, by - sz * 0.8f), Offset(bx - 20f, by - sz * 1.1f), 3f)
-        drawLine(color, Offset(bx + 15f, by - sz * 0.8f), Offset(bx + 20f, by - sz * 1.1f), 3f)
+        drawLine(color, Offset(bx + 15f, by - sz * 0.8f), Offset(bx + 20f, by - sz * 1.1f), 3f)*/
 
         // Barre de vie boss
         val barW = 80f

@@ -28,6 +28,7 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
     var password          by remember { mutableStateOf("") }
     var error             by remember { mutableStateOf(false) }
     var expanded          by remember { mutableStateOf(false) }
+    var searchQuery       by remember { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf<String>("Code incorrect.") }
     Box(
@@ -49,22 +50,32 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                 }
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
- 
+
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // Dropdown destinataire
                 Text("Destinataire", fontSize = 8.sp, letterSpacing = 2.sp, color = T3)
-                Box(
-                    Modifier.fillMaxWidth().border(1.dp, if (expanded) Teal else Bdr)
-                        .clickable { expanded = !expanded; CrackleSound.click() }
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Text(
-                        selectedRecipient?.displayName ?: "Sélectionner...",
-                        fontSize = 11.sp, fontFamily = Mono,
-                        color = if (selectedRecipient != null) T1 else T3
-                    )
+
+                // Champ de recherche
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it; expanded = true; selectedRecipient = null },
+                    singleLine = true,
+                    placeholder = { Text("Rechercher...", fontSize = 10.sp, color = T3) },
+                    colors = TextFieldDefaults.textFieldColors(
+                        backgroundColor         = Card,
+                        textColor               = T1,
+                        cursorColor             = Teal,
+                        focusedIndicatorColor   = Teal,
+                        unfocusedIndicatorColor = Bdr,
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Liste filtrée
+                val filtered = AppStrings.recipients.filter {
+                    searchQuery.isBlank() || it.displayName.contains(searchQuery, ignoreCase = true)
                 }
-                if (expanded) {
+                if (expanded && filtered.isNotEmpty()) {
                     Column(
                         Modifier
                             .fillMaxWidth()
@@ -73,11 +84,12 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                             .background(Card)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        AppStrings.recipients.forEach { r ->
+                        filtered.forEach { r ->
                             Box(
                                 Modifier.fillMaxWidth()
                                     .clickable {
                                         selectedRecipient = r
+                                        searchQuery = r.displayName
                                         expanded = false
                                         password = ""
                                         error = false
@@ -92,7 +104,7 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                         }
                     }
                 }
- 
+
                 // Champ mot de passe
                 if (selectedRecipient != null) {
                     Text("Mot de passe", fontSize = 8.sp, letterSpacing = 2.sp, color = T3)
@@ -102,9 +114,9 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                         singleLine    = true,
                         visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                         colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor    = Card,
-                            textColor          = T1,
-                            cursorColor        = Teal,
+                            backgroundColor         = Card,
+                            textColor               = T1,
+                            cursorColor             = Teal,
                             focusedIndicatorColor   = Teal,
                             unfocusedIndicatorColor = Bdr,
                         ),
@@ -113,7 +125,7 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                     if (error) {
                         Text(errorMessage, fontSize = 9.sp, color = Red, letterSpacing = 1.sp)
                     }
- 
+
                     // Bouton valider
                     Box(
                         Modifier.fillMaxWidth()
@@ -141,7 +153,7 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 var volume by remember { mutableStateOf(1f) }
                 var muted  by remember { mutableStateOf(false) }
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(0.5f),) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth(0.5f)) {
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,

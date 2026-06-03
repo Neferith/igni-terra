@@ -67,9 +67,10 @@ enum class ManualSection(val num: String, val label: String) {
     FIRE_MODES("04", "Modes de tir"),
     SAFETY("05", "Sécurité"),
     LEGAL("06", "Dispositions légales"),
-    SECRET("07", "Classifié"),
+    RECYCLAGE("07", "Recyclage"),
+    SECRET("08", "Classifié"),
 
-    TRADUCTER("08", "Traducteur Magitek Cipher")
+    TRADUCTER("09", "Traducteur Magitek Cipher")
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ fun ManualApp() {
             else -> ShooterFullScreen(
                 recipient = recipient!!,
                 onQuit    = { /*recipient = null*/ },
-                onEnd     = { badEnding -> gameResult = badEnding }
+                onEnd     = { /*badEnding -> gameResult = badEnding*/ }
             )
         }
         return
@@ -139,6 +140,17 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
         glitch.startLoop(scope)
         CrackleSound.openDocument()
         //  recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+    }
+
+    var gameAccessRequested by remember { mutableStateOf(false) }
+
+    if (gameAccessRequested) {
+        ShooterFullScreen(
+            recipient = recipient,
+            onQuit    = { gameAccessRequested = false },
+            onEnd     = { gameAccessRequested = false }
+        )
+        return
     }
 
 
@@ -228,6 +240,7 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         translatorUnlocked = traducterUnlocked,
                         secretReveled = secretReveled,
                         onSecretReveled = { secretReveled = true },
+                        onGameAccess = { gameAccessRequested = true },
                         onEnableDungeon = {
                             dungeonVisible = true
                         },
@@ -562,6 +575,7 @@ private fun ManualContent(
     secretReveled: Boolean,
     onSecretReveled: (() -> Unit)?,
     onEnableDungeon: () -> Unit,
+    onGameAccess: () -> Unit = {},
     onEmblemClick: () -> Unit = {},
     onBadgeClick: () -> Unit = {},
     onDocRefClick: () -> Unit = {}
@@ -577,6 +591,10 @@ private fun ManualContent(
                 ManualSection.COMPONENTS -> ComponentsSection()
                 ManualSection.FIRE_MODES -> FireModesSection()
                 ManualSection.SAFETY -> SafetySection()
+                ManualSection.RECYCLAGE -> RecyclageSection(
+                    recipient    = recipient,
+                    onGameAccess = onGameAccess
+                )
                 ManualSection.LEGAL -> LegalSection()
                 ManualSection.SECRET -> SecretSection(
                     recipient,
@@ -930,6 +948,16 @@ private fun LegalSection() {
     SubHead(AppStrings.S06.sub4Num, AppStrings.S06.sub4Title)
     Prose(AppStrings.S06.p4)
     Spacer(Modifier.height(20.dp))
+    SubHead(AppStrings.S06.addendumNum, AppStrings.S06.addendumTitle)
+    Prose(AppStrings.S06.addendum)
+    Spacer(Modifier.height(8.dp))
+    Box(Modifier.border(1.dp, Bdr).padding(horizontal = 14.dp, vertical = 7.dp)) {
+        Text(AppStrings.S06.addendumStamp, fontSize = 9.sp, letterSpacing = 2.sp, fontFamily = Mono, color = T3)
+    }
+    Spacer(Modifier.height(20.dp))
+    SubHead(AppStrings.S06.addendum2Num, AppStrings.S06.addendum2Title)
+    Prose(AppStrings.S06.addendum2)
+    Spacer(Modifier.height(20.dp))
     Box(Modifier.border(1.dp, GoldDk).padding(horizontal = 18.dp, vertical = 7.dp)) {
         Text(AppStrings.S06.stamp, fontSize = 9.sp, letterSpacing = 4.sp, fontFamily = Mono, color = GoldDk)
     }
@@ -937,7 +965,7 @@ private fun LegalSection() {
 
 // ── Composants réutilisables ──────────────────────────────────────────────────
 @Composable
-private fun SectionHead(num: String, title: String) {
+fun SectionHead(num: String, title: String) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = 18.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -951,7 +979,7 @@ private fun SectionHead(num: String, title: String) {
 }
 
 @Composable
-private fun SubHead(num: String, title: String) {
+fun SubHead(num: String, title: String) {
     Row(
         Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -968,7 +996,7 @@ private fun SubHead(num: String, title: String) {
  * Texte de corps. Les placeholders "[À compléter]" s'affichent en italique/dim.
  */
 @Composable
-private fun Prose(text: String, color: Color = T2) {
+fun Prose(text: String, color: Color = T2) {
     val isPlaceholder = text.trim().startsWith("[")
     Text(
         text = text,
@@ -994,7 +1022,7 @@ private fun WarningBox(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun NoteBox(title: String, content: @Composable () -> Unit) {
+fun NoteBox(title: String, content: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(bottom = 14.dp).height(IntrinsicSize.Min)) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(GoldDk))
         Column(
