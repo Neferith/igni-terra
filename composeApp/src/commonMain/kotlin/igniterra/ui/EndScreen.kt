@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,28 @@ private val ET3   = Color(0xFF4A6880)
 private val EMono = FontFamily.Monospace
 
 enum class EndType { VICTORY, BITTER_VICTORY, BAD_END }
+
+// Textes et titres des trois fins
+class EndTexts(
+    val victoryTitle : String,
+    val bitterTitle  : String,
+    val defeatTitle  : String,
+    val victory      : String,
+    val bitter       : String,
+    val defeat       : String,
+    val victoryCode  : String? = null,  // préfixe du code à envoyer (affiché en fin de test)
+    val bitterCode   : String? = null,
+) {
+    // Préfixe + bilan de la partie en hexadécimal
+    fun codeFor(endType: EndType, stats: GameStats?): String? {
+        val prefix = when (endType) {
+            EndType.VICTORY        -> victoryCode
+            EndType.BITTER_VICTORY -> bitterCode
+            EndType.BAD_END        -> null
+        } ?: return null
+        return if (stats == null) prefix else "$prefix-${stats.hex()}"
+    }
+}
 
 
 private val GOOD_ENDING_TEXT = """
@@ -60,16 +83,29 @@ Decimus Sas Varen
 
 """.trim()
 
+val IgniTerraEndTexts by lazy {
+    EndTexts(
+        victoryTitle = "VICTOIRE !",
+        bitterTitle  = "VICTOIRE AMERE",
+        defeatTitle  = "GAME OVER",
+        victory      = GOOD_ENDING_TEXT,
+        bitter       = BAD_ENDING_TEXT,
+        defeat       = DEFEAT_TEXT,
+    )
+}
+
 @Composable
 fun EndScreen(
     endType     : EndType,
-    onQuit      : () -> Unit
+    onQuit      : () -> Unit,
+    texts       : EndTexts = IgniTerraEndTexts,
+    code        : String? = null
 ) {
     var displayedText by remember { mutableStateOf("") }
     val fullText = when (endType) {
-        EndType.VICTORY        -> GOOD_ENDING_TEXT
-        EndType.BITTER_VICTORY -> BAD_ENDING_TEXT
-        EndType.BAD_END        -> DEFEAT_TEXT
+        EndType.VICTORY        -> texts.victory
+        EndType.BITTER_VICTORY -> texts.bitter
+        EndType.BAD_END        -> texts.defeat
     }
     val accentColor = when (endType) {
         EndType.VICTORY        -> EGold
@@ -100,9 +136,9 @@ fun EndScreen(
             // Titre
             Text(
                 when {
-                    endType == EndType.BAD_END  -> "GAME OVER"
-                    endType == EndType.BITTER_VICTORY -> "VICTOIRE AMERE"
-                    else         -> "VICTOIRE !"
+                    endType == EndType.BAD_END  -> texts.defeatTitle
+                    endType == EndType.BITTER_VICTORY -> texts.bitterTitle
+                    else         -> texts.victoryTitle
                 },
                 fontSize = 10.sp, fontFamily = EMono,
                 color = accentColor, letterSpacing = 8.sp
@@ -132,6 +168,19 @@ fun EndScreen(
 
             // Bouton quitter — visible uniquement quand le texte est fini
             if (displayedText == fullText) {
+                code?.let { code ->
+                    Column(
+                        Modifier.border(1.dp, accentColor.copy(alpha = 0.6f)).padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("CODE DE CERTIFICATION", fontSize = 7.sp, fontFamily = EMono, color = ET3, letterSpacing = 3.sp)
+                        Spacer(Modifier.height(6.dp))
+                        SelectionContainer {
+                            Text(code, fontSize = 16.sp, fontFamily = EMono, color = accentColor, letterSpacing = 4.sp)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
                 Box(Modifier.width(160.dp).height(1.dp).background(accentColor.copy(alpha = 0.3f)))
                 Spacer(Modifier.height(4.dp))
                 Box(

@@ -18,13 +18,13 @@ import androidx.compose.ui.unit.sp
 
 // ── Filigrane D.A. / E.D. ────────────────────────────────────────────────────
 @Composable
-fun WatermarkOverlay(modifier: Modifier = Modifier) {
+fun WatermarkOverlay(modifier: Modifier = Modifier, text: String = "D.A. / E.D.") {
     Layout(
         modifier = modifier,
         content = {
             repeat(120) {
                 Text(
-                    "D.A. / E.D.",
+                    text,
                     fontSize      = 11.sp,
                     fontFamily    = Mono,
                     color         = T3.copy(alpha = 0.06f),

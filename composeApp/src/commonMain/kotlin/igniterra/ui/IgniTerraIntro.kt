@@ -32,6 +32,9 @@ private val IMono  = FontFamily.Monospace
 @Composable
 fun IgniTerraIntro(
     introText  : String = "",
+    header     : String = "AUTORITÉ MAGITEK GARLEAN",
+    title      : String = "IGNI TERRA",
+    subtitle   : String = "LANCE-FLAMME MAGITEK — CLASSE ΓΔ",
     onComplete : () -> Unit
 ) {
     var loaderProgress by remember { mutableStateOf(0f) }
@@ -114,7 +117,7 @@ fun IgniTerraIntro(
         ) {
             if (showLoader) {
             Text(
-                "AUTORITÉ MAGITEK GARLEAN",
+                header,
                 fontSize = 8.sp, letterSpacing = 4.sp,
                 fontFamily = IMono, color = IT3
             )
@@ -124,12 +127,12 @@ fun IgniTerraIntro(
             }
 
             Text(
-                "IGNI TERRA",
+                title,
                 fontSize = 26.sp, letterSpacing = 10.sp,
                 fontFamily = IMono, color = ITeal
             )
             Text(
-                "LANCE-FLAMME MAGITEK — CLASSE ΓΔ",
+                subtitle,
                 fontSize = 8.sp, letterSpacing = 3.sp,
                 fontFamily = IMono, color = IT3
             )

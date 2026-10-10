@@ -42,9 +42,9 @@ fun LoginScreen(onSuccess: (AppStrings.Recipient) -> Unit) {
             // Header
             Box(Modifier.fillMaxWidth().background(Color(0xFF09162A)).padding(20.dp)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
+                    Text("COMPAGNIE DE LA NOUVELLE LUNE", fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
                     Spacer(Modifier.height(6.dp))
-                    Text("IGNI TERRA", fontSize = 18.sp, fontWeight = FontWeight.W300, letterSpacing = 8.sp, color = Teal)
+                    Text(AppStrings.Header.orgShort, fontSize = 18.sp, fontWeight = FontWeight.W300, letterSpacing = 8.sp, color = Teal)
                     Spacer(Modifier.height(4.dp))
                     Text("Accès sécurisé", fontSize = 9.sp, letterSpacing = 2.sp, color = T3)
                 }

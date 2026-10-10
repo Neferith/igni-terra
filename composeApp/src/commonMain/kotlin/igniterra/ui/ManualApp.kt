@@ -42,7 +42,7 @@ val Panel = Color(0xFF0C1B30)
 public val Card = Color(0xFF0E2040)
 val Teal = Color(0xFF38C4C4)
 val TealDk = Color(0xFF1C7070)
-private val Gold = Color(0xFFC8A44A)
+internal val Gold = Color(0xFFC8A44A)
 val GoldDk = Color(0xFF7A6028)
 val T1 = Color(0xFFD6EDF6)
 val T2 = Color(0xFF6EA8C0)
@@ -51,26 +51,62 @@ val Bdr = Color(0xFF152640)
 public val Red = Color(0xFFC84040)
 private val RedBg = Color(0x14C84040)
 private val RedBdr = Color(0x40C84040)
-private val GoldBg = Color(0x12C8A44A)
-private val GoldBdr = Color(0x40C8A44A)
+internal val GoldBg = Color(0x12C8A44A)
+internal val GoldBdr = Color(0x40C8A44A)
 private val CFeu = Color(0xFFC84040)
 private val CTerre = Color(0xFF8A6030)
 private val CVent = Color(0xFF38C4C4)
 public val Mono = FontFamily.Monospace
 
-// ── Navigation ────────────────────────────────────────────────────────────────
-enum class ManualSection(val num: String, val label: String) {
-    COVER("00", "Couverture"),
-    OVERVIEW("01", "Vue d'ensemble"),
-    SPECS("02", "Spécifications"),
-    COMPONENTS("03", "Composants"),
-    FIRE_MODES("04", "Modes de tir"),
-    SAFETY("05", "Sécurité"),
-    LEGAL("06", "Dispositions légales"),
-    RECYCLAGE("07", "Recyclage"),
-    SECRET("08", "Classifié"),
-
-    TRADUCTER("09", "Traducteur Magitek Cipher")
+// ── Manuel Igni Terra ─────────────────────────────────────────────────────────
+val IgniTerraManual: ManualSpec by lazy {
+    ManualSpec(
+        orgShort             = AppStrings.Header.orgShort,
+        organization         = AppStrings.Header.organization,
+        weaponName           = AppStrings.Header.weaponName,
+        subtitle             = AppStrings.Cover.subtitle,
+        badge                = AppStrings.Header.badge,
+        docRef               = AppStrings.Header.docRef,
+        coverMeta            = listOf(
+            AppStrings.Cover.Meta.refLabel     to AppStrings.Cover.Meta.refValue,
+            AppStrings.Cover.Meta.revLabel     to AppStrings.Cover.Meta.revValue,
+            AppStrings.Cover.Meta.classLabel   to AppStrings.Cover.Meta.classValue,
+            AppStrings.Cover.Meta.rangeLabel   to AppStrings.Cover.Meta.rangeValue,
+            AppStrings.Cover.Meta.authorLabel  to AppStrings.Cover.Meta.authorValue,
+            AppStrings.Cover.Meta.author2Label to AppStrings.Cover.Meta.author2Value,
+        ),
+        serialNumber         = AppStrings.serialNumber,
+        footerDocRef         = AppStrings.Footer.docRef,
+        footerTitle          = AppStrings.Footer.title,
+        footerClassification = AppStrings.Footer.classification,
+        watermark            = "D.A. / E.D.",
+        pages = listOf(
+            ManualPage("00", "Couverture")           { CoverSection(it) },
+            ManualPage("01", "Vue d'ensemble")       { OverviewSection() },
+            ManualPage("02", "Spécifications")       { SpecsSection() },
+            ManualPage("03", "Composants")           { ComponentsSection() },
+            ManualPage("04", "Modes de tir")         { FireModesSection() },
+            ManualPage("05", "Sécurité")             { SafetySection() },
+            ManualPage("06", "Dispositions légales") { LegalSection() },
+            ManualPage("07", "Recyclage") {
+                RecyclageSection(recipient = it.recipient, onGameAccess = it.onGameAccess)
+            },
+            ManualPage("08", "Classifié", PageUnlock.SECRET) {
+                SecretSection(
+                    it.recipient,
+                    it.glitch,
+                    it.scope,
+                    translatorUnlocked = it.translatorUnlocked,
+                    secretReveled = it.secretReveled,
+                    onSecretReveled = it.onSecretReveled,
+                    onEnableDungeon = it.onEnableDungeon
+                )
+            },
+            ManualPage("09", "Traducteur Magitek Cipher", PageUnlock.TRADUCTER) {
+                TraducterSection(it.recipient, it.glitch, it.scope)
+            },
+        ),
+    )
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
@@ -132,17 +168,68 @@ fun ManualApp() {
     }
 }
 
+private enum class TestPhase { NONE, INTRO, GAME, END }
+
 @Composable
 private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
+    val spec = remember(recipient) { recipient.manualSpec() }
     val glitch = remember { GlitchEngine() }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         glitch.startLoop(scope)
         CrackleSound.openDocument()
-        //  recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+        if (spec.autoPlayMusic) recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
     }
 
     var gameAccessRequested by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(spec.pages.first()) }
+
+    // ── Test de certification (intro -> jeu -> fin) ──────────────────────────
+    val certification = spec.certification
+    var testPhase  by remember { mutableStateOf(TestPhase.NONE) }
+    var testResult by remember { mutableStateOf<EndType?>(null) }
+    var testStats  by remember { mutableStateOf<GameStats?>(null) }
+    val certificationCode = testResult?.let { certification?.endings?.codeFor(it, testStats) }
+
+    if (certification != null && testPhase != TestPhase.NONE) {
+        when (testPhase) {
+            TestPhase.INTRO -> IgniTerraIntro(
+                introText  = certification.introText,
+                header     = certification.introHeader,
+                title      = certification.introTitle,
+                subtitle   = certification.introSubtitle,
+                onComplete = { testPhase = TestPhase.GAME }
+            )
+            TestPhase.GAME -> ShooterFullScreen(
+                recipient = recipient,
+                scenario  = certification.scenario,
+                onStats   = { testStats = it },
+                // Quitter, ou mourir (retour auto), vaut échec
+                onQuit    = {
+                    if (testPhase == TestPhase.GAME) {
+                        testResult = EndType.BAD_END
+                        testPhase  = TestPhase.END
+                    }
+                },
+                onEnd     = { result ->
+                    testResult = result
+                    testPhase  = TestPhase.END
+                }
+            )
+            TestPhase.END -> EndScreen(
+                endType = testResult ?: EndType.BAD_END,
+                texts   = certification.endings,
+                code    = certificationCode,
+                onQuit  = {
+                    CrackleSound.stopWav()
+                    if (spec.autoPlayMusic) recipient.musicFile?.let { CrackleSound.playWav(it, loop = true) }
+                    testPhase = TestPhase.NONE
+                }
+            )
+            TestPhase.NONE -> Unit
+        }
+        return
+    }
 
     if (gameAccessRequested) {
         ShooterFullScreen(
@@ -153,8 +240,6 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
         return
     }
 
-
-    var selected by remember { mutableStateOf(ManualSection.COVER) }
     LaunchedEffect(selected) { glitch.triggerNavGlitch(scope) }
     var drawerOpen by remember { mutableStateOf(false) }
     var secretUnlocked by remember { mutableStateOf(false) }
@@ -167,6 +252,51 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
     var docRefClicks by remember { mutableStateOf(0) }
     val (shakeX, shakeY) = glitch.contentShake
 
+    val onBadgeClick: () -> Unit = {
+        badgeClicks++
+        if (badgeClicks >= 5) {
+            snakeVisible = true
+            badgeClicks = 0
+            CrackleSound.click()
+        }
+    }
+
+    val ctx = ManualPageContext(
+        spec               = spec,
+        recipient          = recipient,
+        glitch             = glitch,
+        scope              = scope,
+        translatorUnlocked = traducterUnlocked,
+        secretReveled      = secretReveled,
+        onSecretReveled    = { secretReveled = true },
+        onEnableDungeon    = { dungeonVisible = true },
+        onGameAccess       = {
+            if (certification != null) testPhase = TestPhase.INTRO
+            else gameAccessRequested = true
+        },
+        onEmblemClick      = {
+            if (recipient.hasSecretAccess) {
+                emblemClicks++
+                if (emblemClicks >= 5) {
+                    secretUnlocked = true
+                    emblemClicks = 0
+                    CrackleSound.unlockSecret()
+                }
+            }
+        },
+        onBadgeClick       = onBadgeClick,
+        onDocRefClick      = {
+            docRefClicks++
+            if (docRefClicks >= 5) {
+                dungeonVisible = true
+                docRefClicks = 0
+                CrackleSound.click()
+            }
+        },
+        certificationResult = testResult,
+        certificationCode   = certificationCode,
+    )
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val isPortrait = maxWidth < PORTRAIT_THRESHOLD_DP.dp
 
@@ -174,39 +304,16 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
             if (isPortrait) {
                 // ── Mode portrait : contenu plein écran + drawer overlay ──────
                 PortraitLayout(
-                    scope = scope,
-                    glitch = glitch,
+                    ctx = ctx,
                     selected = selected,
                     drawerOpen = drawerOpen,
                     shakeX = shakeX,
                     shakeY = shakeY,
-                    recipient = recipient,
                     secretUnlocked = secretUnlocked && recipient.hasSecretAccess,
+                    traducterUnlocked = traducterUnlocked,
                     onSelect = { selected = it; drawerOpen = false },
                     onToggle = { drawerOpen = !drawerOpen },
                     onDismiss = { drawerOpen = false },
-                    traducterUnlocked = traducterUnlocked,
-                    secretReveled = secretReveled,
-                    onSecretReveled = { secretReveled = true },
-                    onEnableDungeon = { dungeonVisible = true },
-                    onEmblemClick = {
-                        if (recipient.hasSecretAccess) {
-                            emblemClicks++
-                            if (emblemClicks >= 5) {
-                                secretUnlocked = true
-                                emblemClicks = 0
-                                CrackleSound.unlockSecret()
-                            }
-                        }
-                    },
-                    onBadgeClick = {
-                        badgeClicks++
-                        if (badgeClicks >= 5) {
-                            snakeVisible = true
-                            badgeClicks = 0
-                            CrackleSound.click()
-                        }
-                    }
                 )
             } else {
                 // ── Mode paysage / desktop : sidebar fixe ────────────────────
@@ -215,55 +322,20 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
                         .offset(shakeX.dp, shakeY.dp)
                 ) {
                     ManualSidebar(
+                        spec = spec,
                         selected = selected,
                         secretUnlocked = secretUnlocked && recipient.hasSecretAccess,
                         onSelect = { selected = it },
                         recipient = recipient,
                         traducterUnlocked = traducterUnlocked,
-                        onBadgeClick = {
-                            badgeClicks++
-                            if (badgeClicks >= 5) {
-                                snakeVisible = true
-                                badgeClicks = 0
-                                CrackleSound.click()
-                            }
-                        }
+                        onBadgeClick = onBadgeClick
                     )
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Bdr))
                     ManualContent(
                         section = selected,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        recipient = recipient,
-                        emblemClicks = emblemClicks,
-                        glitch = glitch,
-                        scope = scope,
-                        translatorUnlocked = traducterUnlocked,
-                        secretReveled = secretReveled,
-                        onSecretReveled = { secretReveled = true },
-                        onGameAccess = { gameAccessRequested = true },
-                        onEnableDungeon = {
-                            dungeonVisible = true
-                        },
-                        onEmblemClick = {
-                            if (recipient.hasSecretAccess) {
-                                emblemClicks++
-                                if (emblemClicks >= 5) {
-                                    secretUnlocked = true
-                                    emblemClicks = 0
-                                    CrackleSound.unlockSecret()
-                                }
-                            }
-                        },
-                        onDocRefClick = {
-                            docRefClicks++
-                            if (docRefClicks >= 5) {
-                                dungeonVisible = true
-                                docRefClicks = 0
-                                CrackleSound.click()
-                            }
-                        }
+                        ctx = ctx
                     )
-
                 }
             }
             GlitchOverlay(glitch)
@@ -285,23 +357,16 @@ private fun ManualContent_Internal(recipient: AppStrings.Recipient) {
 
 @Composable
 private fun PortraitLayout(
-    scope: CoroutineScope,
-    glitch: GlitchEngine,
-    selected: ManualSection,
+    ctx: ManualPageContext,
+    selected: ManualPage,
     drawerOpen: Boolean,
     shakeX: Float,
     shakeY: Float,
-    recipient: AppStrings.Recipient,
     secretUnlocked: Boolean = false,
     traducterUnlocked: Boolean,
-    onSelect: (ManualSection) -> Unit,
+    onSelect: (ManualPage) -> Unit,
     onToggle: () -> Unit,
     onDismiss: () -> Unit,
-    secretReveled: Boolean,
-    onSecretReveled: () -> Unit,
-    onEnableDungeon: () -> Unit,
-    onEmblemClick: () -> Unit = {},
-    onBadgeClick: () -> Unit = {},
 ) {
     val drawerWidth = 220.dp
     val offsetX by animateDpAsState(
@@ -315,20 +380,9 @@ private fun PortraitLayout(
         Box(Modifier.fillMaxSize().offset(shakeX.dp, shakeY.dp)) {
             Column(Modifier.fillMaxSize()) {
                 // Header mobile avec bouton menu
-                PortraitHeader(selected, onToggle, onBadgeClick)
+                PortraitHeader(ctx.spec, selected, onToggle, ctx.onBadgeClick)
                 Box(Modifier.weight(1f)) {
-                    ManualContent(
-                        selected,
-                        Modifier.fillMaxSize(),
-                        recipient,
-                        glitch = glitch,
-                        scope = scope,
-                        secretReveled = secretReveled,
-                        onSecretReveled = onSecretReveled,
-                        translatorUnlocked = traducterUnlocked,
-                        onEmblemClick = onEmblemClick,
-                        onEnableDungeon = onEnableDungeon
-                    )
+                    ManualContent(selected, Modifier.fillMaxSize(), ctx)
                 }
             }
         }
@@ -345,9 +399,10 @@ private fun PortraitLayout(
         // Drawer qui slide depuis la gauche
         Box(Modifier.offset(x = offsetX).width(drawerWidth).fillMaxHeight()) {
             ManualSidebar(
+                spec = ctx.spec,
                 selected = selected,
                 onSelect = onSelect,
-                recipient = recipient,
+                recipient = ctx.recipient,
                 traducterUnlocked = traducterUnlocked,
                 secretUnlocked = secretUnlocked
             )
@@ -357,7 +412,8 @@ private fun PortraitLayout(
 
 @Composable
 private fun PortraitHeader(
-    selected: ManualSection, onMenuClick: () -> Unit,
+    spec: ManualSpec,
+    selected: ManualPage, onMenuClick: () -> Unit,
     onBadgeClick: () -> Unit = {},
 ) {
     Row(
@@ -381,7 +437,7 @@ private fun PortraitHeader(
         Spacer(Modifier.width(14.dp))
         Column {
             Text(
-                AppStrings.Header.weaponName.uppercase(),
+                spec.weaponName.uppercase(),
                 fontSize = 13.sp, fontWeight = FontWeight.W300,
                 letterSpacing = 4.sp, color = Teal
             )
@@ -397,7 +453,7 @@ private fun PortraitHeader(
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
-                AppStrings.Header.badge.uppercase(),
+                spec.badge.uppercase(),
                 fontSize = 7.sp,
                 letterSpacing = 2.sp,
                 fontFamily = Mono,
@@ -410,8 +466,9 @@ private fun PortraitHeader(
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 @Composable
 private fun ManualSidebar(
-    selected: ManualSection,
-    onSelect: (ManualSection) -> Unit,
+    spec: ManualSpec,
+    selected: ManualPage,
+    onSelect: (ManualPage) -> Unit,
     recipient: AppStrings.Recipient,
     secretUnlocked: Boolean = false,
     traducterUnlocked: Boolean,
@@ -424,34 +481,32 @@ private fun ManualSidebar(
 
         // Header fixe
         Column(Modifier.padding(18.dp)) {
-            Text(AppStrings.Header.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
+            Text(spec.orgShort, fontSize = 8.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
             Spacer(Modifier.height(4.dp))
             Text(
-                AppStrings.Header.weaponName.uppercase(),
+                spec.weaponName.uppercase(),
                 fontSize = 15.sp, fontWeight = FontWeight.W300, letterSpacing = 4.sp, color = Teal
             )
             Spacer(Modifier.height(3.dp))
-            Text(AppStrings.Header.docRef, fontSize = 8.sp, fontFamily = Mono, color = T3)
+            Text(spec.docRef, fontSize = 8.sp, fontFamily = Mono, color = T3)
         }
         HRule()
 
         // Navigation scrollable
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            ManualSection.entries.forEach { s ->
-                if (s == ManualSection.SECRET) return@forEach
-                if (s == ManualSection.TRADUCTER) return@forEach
-                SideNavItem(s, s == selected) { onSelect(s) }
+            spec.pages.filter { it.unlock == PageUnlock.NONE }.forEach { p ->
+                SideNavItem(p, p == selected) { onSelect(p) }
             }
             if (secretUnlocked) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
-                SideNavItem(ManualSection.SECRET, selected == ManualSection.SECRET, accent = Red) {
-                    onSelect(ManualSection.SECRET)
+                spec.pages.filter { it.unlock == PageUnlock.SECRET }.forEach { p ->
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+                    SideNavItem(p, selected == p, accent = Red) { onSelect(p) }
                 }
             }
             if (traducterUnlocked) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
-                SideNavItem(ManualSection.TRADUCTER, selected == ManualSection.TRADUCTER, accent = Red) {
-                    onSelect(ManualSection.TRADUCTER)
+                spec.pages.filter { it.unlock == PageUnlock.TRADUCTER }.forEach { p ->
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Red.copy(alpha = 0.3f)))
+                    SideNavItem(p, selected == p, accent = Red) { onSelect(p) }
                 }
             }
 
@@ -464,7 +519,7 @@ private fun ManualSidebar(
                 ) {
                     Text("SON", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = Mono, color = T3)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        var musicPlaying by remember { mutableStateOf(false) }
+                        var musicPlaying by remember { mutableStateOf(spec.autoPlayMusic && recipient.musicFile != null) }
                         Box(
                             Modifier
                                 .border(1.dp, if (musicPlaying) Teal else Bdr, RoundedCornerShape(2.dp))
@@ -527,7 +582,7 @@ private fun ManualSidebar(
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
-                    AppStrings.Header.badge.uppercase(),
+                    spec.badge.uppercase(),
                     fontSize = 8.sp,
                     letterSpacing = 3.sp,
                     fontFamily = Mono,
@@ -539,7 +594,7 @@ private fun ManualSidebar(
 }
 
 @Composable
-private fun SideNavItem(section: ManualSection, active: Boolean, accent: Color = Teal, onClick: () -> Unit) {
+private fun SideNavItem(section: ManualPage, active: Boolean, accent: Color = Teal, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth()
             .clickable(onClick = { onClick(); CrackleSound.click() })
@@ -565,130 +620,82 @@ private fun SideNavItem(section: ManualSection, active: Boolean, accent: Color =
 // ── Content ───────────────────────────────────────────────────────────────────
 @Composable
 private fun ManualContent(
-    section: ManualSection,
+    section: ManualPage,
     modifier: Modifier,
-    recipient: AppStrings.Recipient? = null,
-    emblemClicks: Int = 0,
-    translatorUnlocked: Boolean,
-    glitch: GlitchEngine,
-    scope: CoroutineScope,
-    secretReveled: Boolean,
-    onSecretReveled: (() -> Unit)?,
-    onEnableDungeon: () -> Unit,
-    onGameAccess: () -> Unit = {},
-    onEmblemClick: () -> Unit = {},
-    onBadgeClick: () -> Unit = {},
-    onDocRefClick: () -> Unit = {}
+    ctx: ManualPageContext,
 ) {
     val scroll = rememberScrollState()
     LaunchedEffect(section) { scroll.scrollTo(0) }
     Box(modifier) {
         Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(40.dp)) {
-            when (section) {
-                ManualSection.COVER -> CoverSection(recipient, onEmblemClick, onBadgeClick)
-                ManualSection.OVERVIEW -> OverviewSection()
-                ManualSection.SPECS -> SpecsSection()
-                ManualSection.COMPONENTS -> ComponentsSection()
-                ManualSection.FIRE_MODES -> FireModesSection()
-                ManualSection.SAFETY -> SafetySection()
-                ManualSection.RECYCLAGE -> RecyclageSection(
-                    recipient    = recipient,
-                    onGameAccess = onGameAccess
-                )
-                ManualSection.LEGAL -> LegalSection()
-                ManualSection.SECRET -> SecretSection(
-                    recipient,
-                    glitch,
-                    scope,
-                    translatorUnlocked = translatorUnlocked,
-                    secretReveled = secretReveled,
-                    onSecretReveled = onSecretReveled,
-                    onEnableDungeon = onEnableDungeon
-                )
-
-                ManualSection.TRADUCTER -> TraducterSection(recipient, glitch, scope)
-            }
+            section.content(ctx)
             Spacer(Modifier.height(28.dp))
             HRule()
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    AppStrings.Footer.docRef, fontSize = 9.sp, fontFamily = Mono, color = T3,
+                    ctx.spec.footerDocRef, fontSize = 9.sp, fontFamily = Mono, color = T3,
                     modifier = Modifier.clickable {
-                        onDocRefClick()
+                        ctx.onDocRefClick()
                     }
                 )
-                Text(AppStrings.Footer.title, fontSize = 9.sp, fontFamily = Mono, color = T3)
-                Text(AppStrings.Footer.classification, fontSize = 9.sp, fontFamily = Mono, color = T3)
+                Text(ctx.spec.footerTitle, fontSize = 9.sp, fontFamily = Mono, color = T3)
+                Text(ctx.spec.footerClassification, fontSize = 9.sp, fontFamily = Mono, color = T3)
             }
         }
-        WatermarkOverlay(Modifier.matchParentSize())
+        WatermarkOverlay(Modifier.matchParentSize(), ctx.spec.watermark)
     }
 }
 
 
 // ── 00 Cover ──────────────────────────────────────────────────────────────────
 @Composable
-private fun CoverSection(
-    recipient: AppStrings.Recipient? = null,
-    onEmblemClick: () -> Unit = {},
-    onBadgeClick: () -> Unit = {}
-) {
+internal fun CoverSection(ctx: ManualPageContext) {
+    val spec = ctx.spec
+    val recipient = ctx.recipient
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(20.dp))
-        NouvelLuneLogo(Modifier.size(80.dp).clickable { onEmblemClick() })
+        NouvelLuneLogo(Modifier.size(80.dp).clickable { ctx.onEmblemClick() })
         Spacer(Modifier.height(22.dp))
-        Text(AppStrings.Header.organization, fontSize = 9.sp, letterSpacing = 3.sp, color = T3)
+        Text(spec.organization, fontSize = 9.sp, letterSpacing = 3.sp, color = T3)
         Spacer(Modifier.height(10.dp))
         Text(
-            AppStrings.Header.weaponName.uppercase(),
+            spec.weaponName.uppercase(),
             fontSize = 44.sp, fontWeight = FontWeight.W100, letterSpacing = 14.sp, color = Teal
         )
         Spacer(Modifier.height(6.dp))
-        Text(AppStrings.Cover.subtitle, fontSize = 10.sp, letterSpacing = 5.sp, color = Gold)
+        Text(spec.subtitle, fontSize = 10.sp, letterSpacing = 5.sp, color = Gold)
         Spacer(Modifier.height(36.dp))
         // Note de transmission
-        if (recipient != null) {
-            Spacer(Modifier.height(20.dp))
-            Column(
-                Modifier.widthIn(max = 440.dp)
-                    .background(GoldBg)
-                    .border(1.dp, GoldBdr)
-                    .padding(16.dp)
-            ) {
-                Text("NOTE DE TRANSMISSION", fontSize = 7.sp, letterSpacing = 3.sp, color = Gold, fontFamily = Mono)
-                Spacer(Modifier.height(8.dp))
-                Text(recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
-            }
+        Spacer(Modifier.height(20.dp))
+        Column(
+            Modifier.widthIn(max = 440.dp)
+                .background(GoldBg)
+                .border(1.dp, GoldBdr)
+                .padding(16.dp)
+        ) {
+            Text("NOTE DE TRANSMISSION", fontSize = 7.sp, letterSpacing = 3.sp, color = Gold, fontFamily = Mono)
+            Spacer(Modifier.height(8.dp))
+            Text(spec.transmissionNote ?: recipient.note, fontSize = 11.sp, lineHeight = 18.sp, color = T2, fontStyle = FontStyle.Italic)
         }
         Spacer(Modifier.height(36.dp))
+        val rows = spec.coverMeta.chunked(2)
         Column(Modifier.widthIn(max = 440.dp).border(1.dp, Bdr)) {
-            Row(Modifier.fillMaxWidth()) {
-                CoverMetaCell(AppStrings.Cover.Meta.refLabel, AppStrings.Cover.Meta.refValue, Modifier.weight(1f))
-                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
-                CoverMetaCell(AppStrings.Cover.Meta.revLabel, AppStrings.Cover.Meta.revValue, Modifier.weight(1f))
-            }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
-            Row(Modifier.fillMaxWidth()) {
-                CoverMetaCell(AppStrings.Cover.Meta.classLabel, AppStrings.Cover.Meta.classValue, Modifier.weight(1f))
-                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
-                CoverMetaCell(AppStrings.Cover.Meta.rangeLabel, AppStrings.Cover.Meta.rangeValue, Modifier.weight(1f))
-            }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
-            Row(Modifier.fillMaxWidth()) {
-                CoverMetaCell(AppStrings.Cover.Meta.authorLabel, AppStrings.Cover.Meta.authorValue, Modifier.weight(1f))
-                Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
-                CoverMetaCell(
-                    AppStrings.Cover.Meta.author2Label,
-                    AppStrings.Cover.Meta.author2Value,
-                    Modifier.weight(1f)
-                )
+            rows.forEachIndexed { ri, row ->
+                Row(Modifier.fillMaxWidth()) {
+                    row.forEachIndexed { ci, (label, value) ->
+                        CoverMetaCell(label, value, Modifier.weight(1f))
+                        if (ci == 0) Box(Modifier.width(1.dp).height(52.dp).background(Bdr))
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+                if (ri < rows.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
             }
         }
 
         Spacer(Modifier.height(16.dp))
         Text(
-            "N° SÉRIE : ${AppStrings.serialNumber}",
+            "N° SÉRIE : ${spec.serialNumber}",
             fontSize = 9.sp, fontFamily = Mono,
             color = T3, letterSpacing = 3.sp
         )
@@ -799,7 +806,7 @@ private fun SpecsSection() {
 }
 
 @Composable
-private fun DataCell(label: String, value: String, modifier: Modifier) {
+internal fun DataCell(label: String, value: String, modifier: Modifier) {
     Column(modifier.padding(horizontal = 14.dp, vertical = 9.dp)) {
         Text(label, fontSize = 8.sp, letterSpacing = 2.sp, color = T3)
         Spacer(Modifier.height(3.dp))
@@ -878,7 +885,7 @@ private fun FireModesSection() {
 }
 
 @Composable
-private fun ModeCard(
+internal fun ModeCard(
     code: String, name: String, range: String, unit: String,
     desc: String, barRatio: Float, accent: Color, modifier: Modifier
 ) {
@@ -927,7 +934,7 @@ private fun SafetySection() {
 }
 
 @Composable
-private fun CheckItem(text: String) {
+internal fun CheckItem(text: String) {
     Row(Modifier.padding(vertical = 7.dp), verticalAlignment = Alignment.Top) {
         Text(">", fontSize = 8.sp, color = TealDk, modifier = Modifier.padding(top = 4.dp))
         Spacer(Modifier.width(10.dp))
@@ -1009,7 +1016,7 @@ fun Prose(text: String, color: Color = T2) {
 }
 
 @Composable
-private fun WarningBox(title: String, content: @Composable () -> Unit) {
+internal fun WarningBox(title: String, content: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(bottom = 14.dp).height(IntrinsicSize.Min)) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(Red))
         Column(
@@ -1035,7 +1042,7 @@ fun NoteBox(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun HRule() {
+internal fun HRule() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Bdr))
 }
 

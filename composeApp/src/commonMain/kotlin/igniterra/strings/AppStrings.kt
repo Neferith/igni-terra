@@ -11,8 +11,12 @@ object AppStrings {
         val note        : String,
         val hasGameAccess  : Boolean = false,
         val hasSecretAccess: Boolean = false,
-        val musicFile      : String? = null  // null = pas de musique
+        val musicFile      : String? = null,  // null = pas de musique
+        val manual         : ManualKind = ManualKind.IGNI_TERRA
     )
+
+    // Manuel ouvert par le destinataire
+    enum class ManualKind { IGNI_TERRA, DANSE_MACABRE, DANSE_MACABRE_CONSULT }
 
 
     val recipients = listOf(
@@ -99,7 +103,9 @@ object AppStrings {
             "PS : Je t'aime.",
             hasSecretAccess = true,
             hasGameAccess = false,
-            musicFile   = "garleananthem.mp3"
+            musicFile   = "garleananthem.mp3",
+            // Temporaire : Eleanor lui montre l'équipement de Sébastien (remettre IGNI_TERRA ensuite)
+            manual      = ManualKind.DANSE_MACABRE_CONSULT
         ),
 
         Recipient(
@@ -158,6 +164,18 @@ object AppStrings {
                     "— Eleanor Dubrie\n",
             musicFile = "endwalker8bits.mp3"
         ),
+        Recipient(
+            displayName = "Sébastien Soufflazur",
+            password    = "barbecue",
+            note        = "Sébastien,\n" +
+                    "Voici les CGU, accompagnées de leur FAQ. Si tu es perdu, fais-toi aider d’une amie (je pense à Winifred).\n" +
+                    "Si jamais tu réussis le test, envoie-moi le code, tu auras ton arme en retour.\n\n" +
+                    "Bon courage\n" +
+                    "Eleanor Dubrie\n" +
+                    "PS : Évite de l’utiliser autant que possible.",
+            musicFile   = "ultima8bits.mp3",
+            manual      = ManualKind.DANSE_MACABRE
+        ),
     )
 
     val serialNumber: String = run {
@@ -168,7 +186,7 @@ object AppStrings {
     }
 
     object Meta {
-        const val windowTitle = "Igni Terra — Manuel Technique"
+        const val windowTitle = "NLRP / DAE — Archives Techniques"
     }
 
     object Header {

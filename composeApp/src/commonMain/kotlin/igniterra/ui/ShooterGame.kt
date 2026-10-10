@@ -112,7 +112,18 @@ private val WAVES = listOf(
     listOf(A,B,C,B,A,C,B,A,B,C,A,B,C,B,A,C,B,A,B,C,A,B,C,B,A,C,B,A),
 )
 
-class ShooterGame {
+// Bilan d'une partie, encodé en hexadécimal dans le code de certification
+class GameStats(val lives: Int, val victims: Int, val score: Int) {
+    // Format : V VV-SSSSS  (vies 1 chiffre, victimes 2 chiffres, score 5 chiffres)
+    fun hex(): String =
+        lives.coerceIn(0, 0xF).toString(16).uppercase() +
+        victims.coerceIn(0, 0xFF).toString(16).uppercase().padStart(2, '0') + "-" +
+        score.coerceIn(0, 0xFFFFF).toString(16).uppercase().padStart(5, '0')
+}
+
+class ShooterGame(val scenario: ShooterScenario = IgniTerraScenario) {
+    fun stats() = GameStats(lives = lives, victims = girlsLost, score = score)
+
 
     val zombies    = mutableListOf<Zombie>()
     val civilians  = mutableListOf<Civilian>()
@@ -147,12 +158,19 @@ class ShooterGame {
     var playerHitFlash by mutableStateOf(0)
     var civilianMessage by mutableStateOf("")  // "SAUVÉE !" ou "TU L'AS TUÉE !"
     var civilianMsgTimer = 0
+    var civilianMessageBad = false
+
+    // Tentatives (la charge de l'arme est conservée entre deux parties)
+    var attempt by mutableStateOf(0)
+    val attemptsLeft: Int? get() = scenario.maxAttempts?.let { it - attempt }
+    val canRetry: Boolean get() = (attemptsLeft ?: 1) > 0
 
     private var nextId              = 0
     private val rng        = Random.Default
     private var spawnQueue = mutableListOf<ZombieType>()
 
     fun start() {
+        attempt++
         score = 0; lives = 3; wave = 0; alive = true; won = false
         playerY = 0.5f
         playerHitFlash = 0
@@ -200,9 +218,9 @@ class ShooterGame {
             igniLevel = newLevel
             igniCharged = true
             when (newLevel) {
-                3 -> showMessage("MODE γ — PUISSANCE MAX !", 200, priority = 7)
-                2 -> showMessage("MODE β DEBLOQUE !", 180, priority = 7)
-                1 -> showMessage("MODE α DEBLOQUE !", 180, priority = 7)
+                3 -> showMessage(scenario.levelUp[2], 200, priority = 7)
+                2 -> showMessage(scenario.levelUp[1], 180, priority = 7)
+                1 -> showMessage(scenario.levelUp[0], 180, priority = 7)
             }
             CrackleSound.shooterLevelUp()
         } else if (igniTotal >= 5) {
@@ -357,7 +375,8 @@ class ShooterGame {
                 score += 50
                 girlsSaved++
                 CrackleSound.shooterGirlSaved()
-                civilianMessage = "SAUVÉE ! +50"
+                civilianMessage = scenario.civilianSaved
+                civilianMessageBad = false
                 civilianMsgTimer = 120
                 deadCivilians.add(c)
             }
@@ -369,9 +388,10 @@ class ShooterGame {
                 CrackleSound.shooterGirlKilled()
                 if (firstKill) {
                     firstKill = false
-                    showMessage("Mes condoleances, tu viens de tuer Elea !", 240, priority = 9)
+                    showMessage(scenario.firstLoss, 240, priority = 9)
                 }
-                civilianMessage = "UNE ENFANT EST PERDUE..."
+                civilianMessage = scenario.civilianLost
+                civilianMessageBad = true
                 civilianMsgTimer = 180
                 deadCivilians.add(c)
             }
@@ -391,9 +411,10 @@ class ShooterGame {
                     CrackleSound.shooterGirlKilled()
                     if (firstKill) {
                         firstKill = false
-                        showMessage("Mes condoleances, tu viens de tuer Elea !", 240, priority = 9)
+                        showMessage(scenario.firstLoss, 240, priority = 9)
                     }
-                    civilianMessage = "TU L'AS TUÉE !"
+                    civilianMessage = scenario.civilianKilled
+                    civilianMessageBad = scenario.killedMessageRed
                     civilianMsgTimer = 120
                     if (lives <= 0) { alive = false; message = "GAME OVER" }
                 }
@@ -424,7 +445,7 @@ class ShooterGame {
             // Lance une petite fille (phase enragée)
             if (alive && !won && boss.phase == 1 && rng.nextFloat() < 0.008f && civilians.none { it.alive }) {
                 civilians.add(Civilian(x = boss.x - 0.05f, y = boss.y + (rng.nextFloat() - 0.5f) * 0.2f))
-                showMessage("!! IL LANCE UNE ENFANT !!", 150, priority = 8)
+                showMessage(scenario.bossThrows, 150, priority = 8)
             }
 
             // Collision balles joueur → boss (immunisé sans mode γ)
@@ -434,7 +455,7 @@ class ShooterGame {
                     if (!b.isFlame || igniLevel < 3) {
                         // Balle rejetée — boss immunisé
                         boss.shieldFlash = 12
-                        showMessage("!! IGNI TERRA γ REQUIS !!", 100, priority = 10)
+                        showMessage(scenario.bossImmune, 100, priority = 10)
                         return@forEach
                     }
                     boss.hp -= b.damage
@@ -468,7 +489,7 @@ class ShooterGame {
                         girlsSaved++
                         CrackleSound.shooterGirlSaved()
                         lives = (lives + 1).coerceAtMost(9)
-                        civilianMessage = "SAUVEE ! +50 +VIE"
+                        civilianMessage = scenario.civilianSavedLife; civilianMessageBad = false
                         civilianMsgTimer = 120
                     }
                 }
@@ -503,7 +524,7 @@ class ShooterGame {
                             score += 50
                             girlsSaved++
                             lives = (lives + 1).coerceAtMost(9)
-                            civilianMessage = "SAUVEE ! +50 +VIE"
+                            civilianMessage = scenario.civilianSavedLife; civilianMessageBad = false
                             civilianMsgTimer = 120
                         }
                     }

@@ -46,8 +46,14 @@ private val SBlood    = Color(0xFFAA1111)   // sang sombre
 
 // ── Overlay — structure identique à FpsView ───────────────────────────────────
 @Composable
-fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((EndType) -> Unit)? = null) {
-    val game           = remember { ShooterGame() }
+fun ShooterOverlay(
+    onDismiss: () -> Unit,
+    autoStart: Boolean = false,
+    onEnd: ((EndType) -> Unit)? = null,
+    scenario: ShooterScenario = IgniTerraScenario,
+    onStats: ((GameStats) -> Unit)? = null
+) {
+    val game           = remember { ShooterGame(scenario) }
     val scope          = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
@@ -72,7 +78,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
 
     // Retour auto
     LaunchedEffect(game.alive, game.won) {
-        if (!game.alive && !game.won) {
+        if (!game.alive && !game.won && (scenario.maxAttempts == null || !game.canRetry)) {
             delay(3000L)
             onDismiss()
         }
@@ -114,11 +120,11 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
             ) {
                 Column {
                     Text("PROTOCOLE DE DÉFENSE", fontSize = 7.sp, letterSpacing = 3.sp, fontFamily = SMono, color = ST3)
-                    Text("IGNI TERRA — MODE COMBAT", fontSize = 11.sp, letterSpacing = 2.sp, fontFamily = SMono, color = SRed)
+                    Text(scenario.hudTitle, fontSize = 11.sp, letterSpacing = 2.sp, fontFamily = SMono, color = SRed)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!game.started)           ShooterBtn("DÉMARRER", STeal) { game.start(); CrackleSound.click() }
-                    if (!game.alive || game.won) ShooterBtn("REJOUER",  SRed)  { game.start(); CrackleSound.click() }
+                    if ((!game.alive && game.canRetry) || (game.won && scenario.maxAttempts == null)) ShooterBtn("REJOUER",  SRed)  { game.start(); CrackleSound.click() }
                     ShooterBtn("QUITTER", ST3) { CrackleSound.click(); onDismiss() }
                 }
             }
@@ -132,6 +138,7 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                 ShooterHud("VAGUE", if (game.finalBoss != null) "BOSS" else "${game.wave}/5")
                 ShooterHud("SCORE", "${game.score}")
                 ShooterHud("VIES",  "${game.lives}")
+                if (scenario.maxAttempts != null) ShooterHud("ESSAI", "${game.attempt}/${scenario.maxAttempts}")
 
                 Text("CLIC TIRER  ·  CLIC DROIT / LONG PRESS GRAPPIN", fontSize = 7.sp, fontFamily = SMono, color = ST3)
 
@@ -144,18 +151,18 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("CIVILES", fontSize = 6.sp, letterSpacing = 2.sp, fontFamily = SMono, color = ST3)
+                Text(scenario.civiliansLabel, fontSize = 6.sp, letterSpacing = 2.sp, fontFamily = SMono, color = ST3)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("(+)", fontSize = 10.sp, color = Color(0xFFFFB3C6))
-                    Text("SAUVÉES : ${game.girlsSaved}", fontSize = 8.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
+                    Text("${scenario.savedLabel} : ${game.girlsSaved}", fontSize = 8.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("(x)", fontSize = 10.sp, color = SRed)
-                    Text("PERDUES : ${game.girlsLost}", fontSize = 8.sp, fontFamily = SMono, color = SRed)
+                    Text("${scenario.lostLabel} : ${game.girlsLost}", fontSize = 8.sp, fontFamily = SMono, color = SRed)
                 }
                 if (game.civilianMessage.isNotEmpty()) {
                     Text(game.civilianMessage, fontSize = 8.sp, fontFamily = SMono,
-                        color = if (game.civilianMessage.contains("PERDUE")) SRed else Color(0xFFFFB3C6),
+                        color = if (game.civilianMessageBad) SRed else Color(0xFFFFB3C6),
                         letterSpacing = 1.sp
                     )
                 }
@@ -309,8 +316,8 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                             Spacer(Modifier.height(6.dp))
                             Spacer(Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Text("(+) Sauvees : ${game.girlsSaved}", fontSize = 9.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
-                                Text("(x) Perdues : ${game.girlsLost}", fontSize = 9.sp, fontFamily = SMono,
+                                Text("(+) ${scenario.endSavedLabel} : ${game.girlsSaved}", fontSize = 9.sp, fontFamily = SMono, color = Color(0xFFFFB3C6))
+                                Text("(x) ${scenario.endLostLabel} : ${game.girlsLost}", fontSize = 9.sp, fontFamily = SMono,
                                     color = if (game.girlsLost > 0) SRed else ST3)
                             }
                             Spacer(Modifier.height(6.dp))
@@ -320,14 +327,14 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                                 Box(
                                     Modifier
                                         .border(1.dp, if (isBadEnding) Color(0xFFFF6B00) else SGold)
-                                        .clickable { onEnd?.invoke(if (isBadEnding) EndType.BITTER_VICTORY else EndType.VICTORY) }
+                                        .clickable { onStats?.invoke(game.stats()); onEnd?.invoke(if (isBadEnding) EndType.BITTER_VICTORY else EndType.VICTORY) }
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
                                         if (isBadEnding)
-                                            "On se decourage ? Viens ici !"
+                                            scenario.bitterButton
                                         else
-                                            "Felicitation ! Viens ici !",
+                                            scenario.victoryButton,
                                         fontSize = 9.sp, fontFamily = SMono,
                                         color = if (isBadEnding) Color(0xFFFF6B00) else SGold,
                                         letterSpacing = 1.sp
@@ -344,21 +351,23 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
-                                        "On abandonne ? Viens ici.",
+                                        scenario.abandonButton,
                                         fontSize = 9.sp, fontFamily = SMono,
                                         color = SRed, letterSpacing = 1.sp
                                     )
                                 }
                                 Spacer(Modifier.height(8.dp))
                                 // Bouton rejouer
-                                Box(
+                                if (game.canRetry) Box(
                                     Modifier
                                         .border(1.dp, STeal.copy(alpha = 0.6f))
                                         .clickable { game.start(); CrackleSound.click() }
                                         .padding(horizontal = 20.dp, vertical = 8.dp)
                                 ) {
                                     Text(
-                                        "Tentez une nouvelle fois",
+                                        game.attemptsLeft?.let { left ->
+                                            "Tentez une nouvelle fois ($left restante${if (left > 1) "s" else ""})"
+                                        } ?: "Tentez une nouvelle fois",
                                         fontSize = 9.sp, fontFamily = SMono,
                                         color = STeal, letterSpacing = 1.sp
                                     )
@@ -391,17 +400,17 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
                 else -> ST3
             }
             val igniLabel = when (game.igniLevel) {
-                1    -> "IGNI TERRA α"
-                2    -> "IGNI TERRA β"
-                3    -> "IGNI TERRA γ MAX"
-                else -> "IGNI TERRA"
+                1    -> scenario.weaponLabels[1]
+                2    -> scenario.weaponLabels[2]
+                3    -> scenario.weaponLabels[3]
+                else -> scenario.weaponLabels[0]
             }
             // Progression dans le palier courant
             val igniPiecesLabel = when (game.igniLevel) {
-                0    -> "${game.igniTotal}/5 pieces"
-                1    -> "${game.igniTotal - 5}/10 pieces"
-                2    -> "${game.igniTotal - 15}/20 pieces"
-                else -> "PUISSANCE MAX"
+                0    -> "${game.igniTotal}/5 ${scenario.partsUnit}"
+                1    -> "${game.igniTotal - 5}/10 ${scenario.partsUnit}"
+                2    -> "${game.igniTotal - 15}/20 ${scenario.partsUnit}"
+                else -> scenario.maxLabel
             }
             // Progression globale 0..1 sur toute la barre (seuils 5/15/35)
             val totalProgress = when (game.igniLevel) {
@@ -459,14 +468,18 @@ fun ShooterOverlay(onDismiss: () -> Unit, autoStart: Boolean = false, onEnd: ((E
 fun ShooterFullScreen(
     recipient : AppStrings.Recipient,
     onQuit    : () -> Unit,
-    onEnd     : ((EndType) -> Unit)? = null
+    onEnd     : ((EndType) -> Unit)? = null,
+    scenario  : ShooterScenario = IgniTerraScenario,
+    onStats   : ((GameStats) -> Unit)? = null
 ) {
 
     Box(Modifier.fillMaxSize().background(SBg), contentAlignment = Alignment.Center) {
         ShooterOverlay(
             onDismiss = { /*CrackleSound.stopWav();*/ onQuit() },
             onEnd     = onEnd,
-            autoStart = true
+            autoStart = true,
+            scenario  = scenario,
+            onStats   = onStats
         )
     }
 }
@@ -823,10 +836,45 @@ private fun DrawScope.drawShooterField(game: ShooterGame) {
         }
     }
 
-    // Petite fille
+    // Civils
     game.civilians.filter { it.alive && !it.saved }.forEach { c ->
         val cx = c.x * w
         val cy = c.y * h
+        if (game.scenario.adultCivilian) {
+            // Civil adulte — manteau de voyage
+            val skin  = Color(0xFFFFD5B0)
+            val coat  = Color(0xFF7A5230)
+            val hair  = Color(0xFF3A2A1A)
+            val pants = Color(0xFF2E2E3A)
+            // Tête
+            drawCircle(skin, 5f, Offset(cx, cy - 17f))
+            drawArc(hair, 180f, 180f, true, Offset(cx - 5f, cy - 23f), Size(10f, 10f))
+            // Yeux
+            drawCircle(Color(0xFF333333), 0.9f, Offset(cx - 2f, cy - 17f))
+            drawCircle(Color(0xFF333333), 0.9f, Offset(cx + 2f, cy - 17f))
+            // Manteau
+            val manteau = androidx.compose.ui.graphics.Path().apply {
+                moveTo(cx - 4f, cy - 12f)
+                lineTo(cx - 7f, cy + 6f)
+                lineTo(cx + 7f, cy + 6f)
+                lineTo(cx + 4f, cy - 12f)
+                close()
+            }
+            drawPath(manteau, coat)
+            drawPath(manteau, coat.copy(alpha = 0.6f), style = Stroke(1f))
+            // Bras (qui court)
+            drawLine(coat, Offset(cx - 4f, cy - 10f), Offset(cx - 9f, cy - 2f), 2f)
+            drawLine(coat, Offset(cx + 4f, cy - 10f), Offset(cx + 8f, cy - 15f), 2f)
+            // Jambes
+            drawLine(pants, Offset(cx - 2f, cy + 6f), Offset(cx - 5f, cy + 15f), 2f)
+            drawLine(pants, Offset(cx + 2f, cy + 6f), Offset(cx + 4f, cy + 15f), 2f)
+            // Chaussures
+            drawCircle(Color(0xFF333333), 2f, Offset(cx - 5f, cy + 16f))
+            drawCircle(Color(0xFF333333), 2f, Offset(cx + 4f, cy + 16f))
+            // Indicateur pulsant
+            drawCircle(Color(0xFFFFD700).copy(alpha = 0.9f), 3f, Offset(cx, cy - 28f))
+            return@forEach
+        }
         val skin  = Color(0xFFFFD5B0)
         val dress = Color(0xFF4A90D9)   // robe bleue (contrast Coerthas)
         val hair  = Color(0xFFCC4400)   // roux vif
